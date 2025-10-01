@@ -8,8 +8,7 @@
     "dev": "node local-server.js",
     "start": "node local-server.js",
     "vercel-dev": "vercel dev",
-    "deploy": "vercel --prod",
-    "build": "vercel build"
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "mongoose": "^8.0.0",
@@ -17,9 +16,6 @@
     "jimp": "^0.22.0",
     "cors": "^2.8.5",
     "express": "^4.18.2"
-  },
-  "devDependencies": {
-    "@vercel/node": "^3.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
