@@ -19,39 +19,59 @@ export default async function handler(req, res) {
   try {
     await connectToDatabase();
 
-    // Get all attendees
-    const attendees = await Attendee.find({}).sort({ name: 1 }).lean();
+    // Get all attendees with their tickets
+    const attendeesWithTickets = await Attendee.aggregate([
+      {
+        $lookup: {
+          from: 'tickets',
+          localField: '_id',
+          foreignField: 'attendeeId',
+          as: 'ticket'
+        }
+      },
+      {
+        $unwind: {
+          path: '$ticket',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $sort: { name: 1 }
+      }
+    ]);
     
     // Calculate statistics
     const stats = {
-      totalAttendees: attendees.length,
-      checkedIn: attendees.filter(a => a.isCheckedIn).length,
-      totalTickets: attendees.length, // Assuming each attendee got a ticket
-      attendanceRate: attendees.length > 0 
-        ? Math.round((attendees.filter(a => a.isCheckedIn).length / attendees.length) * 100)
+      totalAttendees: attendeesWithTickets.length,
+      checkedIn: attendeesWithTickets.filter(a => a.status === 'attended').length,
+      totalTickets: attendeesWithTickets.filter(a => a.ticket).length,
+      attendanceRate: attendeesWithTickets.length > 0 
+        ? Math.round((attendeesWithTickets.filter(a => a.status === 'attended').length / attendeesWithTickets.length) * 100)
         : 0
     };
 
     // Generate timeline data (check-ins by hour)
-    const timeline = generateTimelineData(attendees);
+    const timeline = generateTimelineData(attendeesWithTickets);
 
     // Prepare attendee data for table (sorted by check-in status, then by name)
-    const sortedAttendees = attendees
+    const sortedAttendees = attendeesWithTickets
       .sort((a, b) => {
-        if (a.isCheckedIn !== b.isCheckedIn) {
-          return b.isCheckedIn - a.isCheckedIn; // Checked in first
+        const aAttended = a.status === 'attended';
+        const bAttended = b.status === 'attended';
+        if (aAttended !== bAttended) {
+          return bAttended - aAttended; // Attended first
         }
         return (a.name || '').localeCompare(b.name || '');
       })
       .map(attendee => ({
         name: attendee.name,
         email: attendee.email,
-        collegeName: attendee.collegeName,
+        collegeName: attendee.college,
         department: attendee.department,
         year: attendee.year,
-        isCheckedIn: attendee.isCheckedIn || false,
-        checkInTime: attendee.checkInTime || null,
-        ticketId: attendee.ticketId
+        isCheckedIn: attendee.status === 'attended',
+        checkInTime: attendee.status === 'attended' ? (attendee.updatedAt || attendee.createdAt) : null,
+        ticketId: attendee.ticket ? attendee.ticket.ticketId : null
       }));
 
     const dashboardData = {
@@ -73,9 +93,9 @@ export default async function handler(req, res) {
 }
 
 function generateTimelineData(attendees) {
-  const checkedInAttendees = attendees.filter(a => a.isCheckedIn && a.checkInTime);
+  const attendedAttendees = attendees.filter(a => a.status === 'attended' && a.updatedAt);
   
-  if (checkedInAttendees.length === 0) {
+  if (attendedAttendees.length === 0) {
     return {
       labels: ['No data'],
       data: [0]
@@ -85,8 +105,8 @@ function generateTimelineData(attendees) {
   // Group check-ins by hour
   const hourlyData = {};
   
-  checkedInAttendees.forEach(attendee => {
-    const checkInDate = new Date(attendee.checkInTime);
+  attendedAttendees.forEach(attendee => {
+    const checkInDate = new Date(attendee.updatedAt);
     const hour = checkInDate.getHours();
     const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
     

@@ -227,7 +227,7 @@
             <div class="stat-card">
                 <div class="icon">✅</div>
                 <div class="number" id="checkedIn">...</div>
-                <div class="label">Checked In</div>
+                <div class="label">Attended</div>
             </div>
             <div class="stat-card">
                 <div class="icon">👥</div>
@@ -243,7 +243,7 @@
 
         <div class="charts-container">
             <div class="chart-card">
-                <h3>📈 Check-in Timeline</h3>
+                <h3>📈 Attendance Timeline</h3>
                 <canvas id="timelineChart"></canvas>
             </div>
             <div class="chart-card">
@@ -318,7 +318,7 @@
                 data: {
                     labels: dashboardData.timeline?.labels || [],
                     datasets: [{
-                        label: 'Check-ins',
+                        label: 'Attendees',
                         data: dashboardData.timeline?.data || [],
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -356,7 +356,7 @@
             pieChart = new Chart(pieCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Checked In', 'Not Checked In'],
+                    labels: ['Attended', 'Not Attended'],
                     datasets: [{
                         data: [checkedIn, notCheckedIn],
                         backgroundColor: ['#28a745', '#dc3545'],
@@ -393,8 +393,8 @@
                             <th>College</th>
                             <th>Department</th>
                             <th>Year</th>
-                            <th>Status</th>
-                            <th>Check-in Time</th>
+                            <th>Attendance Status</th>
+                            <th>Attendance Time</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -402,7 +402,7 @@
             
             attendees.forEach(attendee => {
                 const status = attendee.isCheckedIn ? 'checked-in' : 'not-checked-in';
-                const statusText = attendee.isCheckedIn ? 'Checked In' : 'Not Checked In';
+                const statusText = attendee.isCheckedIn ? 'Attended' : 'Not Attended';
                 const checkInTime = attendee.checkInTime 
                     ? new Date(attendee.checkInTime).toLocaleString()
                     : '-';

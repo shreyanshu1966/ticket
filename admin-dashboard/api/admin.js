@@ -19,16 +19,16 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       // Get recent activity logs
       const recentActivity = await Attendee
-        .find({ isCheckedIn: true })
-        .sort({ checkInTime: -1 })
+        .find({ status: 'attended' })
+        .sort({ updatedAt: -1 })
         .limit(50)
         .lean();
 
       const activityLogs = recentActivity.map(attendee => ({
         name: attendee.name,
         email: attendee.email,
-        checkInTime: attendee.checkInTime,
-        collegeName: attendee.collegeName,
+        checkInTime: attendee.updatedAt,
+        collegeName: attendee.college,
         department: attendee.department
       }));
 
@@ -54,13 +54,17 @@ export default async function handler(req, res) {
 
         case 'reset_checkin':
           if (data.ticketId) {
-            await Attendee.updateOne(
-              { ticketId: data.ticketId },
-              { 
-                $unset: { isCheckedIn: "", checkInTime: "" }
-              }
-            );
-            res.status(200).json({ success: true, message: 'Check-in reset' });
+            // Find attendee by ticket and reset their status
+            const ticket = await Ticket.findOne({ ticketId: data.ticketId }).lean();
+            if (ticket) {
+              await Attendee.updateOne(
+                { _id: ticket.attendeeId },
+                { $set: { status: 'ticket_sent' } }
+              );
+              res.status(200).json({ success: true, message: 'Check-in reset' });
+            } else {
+              res.status(404).json({ error: 'Ticket not found' });
+            }
           } else {
             res.status(400).json({ error: 'Ticket ID required' });
           }
@@ -68,14 +72,19 @@ export default async function handler(req, res) {
 
         case 'update_attendee':
           if (data.ticketId) {
-            const updateData = { ...data };
-            delete updateData.ticketId; // Don't update the ticket ID itself
-            
-            await Attendee.updateOne(
-              { ticketId: data.ticketId },
-              { $set: updateData }
-            );
-            res.status(200).json({ success: true, message: 'Attendee updated' });
+            const ticket = await Ticket.findOne({ ticketId: data.ticketId }).lean();
+            if (ticket) {
+              const updateData = { ...data };
+              delete updateData.ticketId; // Don't update the ticket ID itself
+              
+              await Attendee.updateOne(
+                { _id: ticket.attendeeId },
+                { $set: updateData }
+              );
+              res.status(200).json({ success: true, message: 'Attendee updated' });
+            } else {
+              res.status(404).json({ error: 'Ticket not found' });
+            }
           } else {
             res.status(400).json({ error: 'Ticket ID required' });
           }
@@ -99,10 +108,10 @@ export default async function handler(req, res) {
 }
 
 async function sendReminderEmails(data) {
-  // Get attendees who haven't checked in
+  // Get attendees who haven't checked in (don't have status 'attended')
   const notCheckedIn = await Attendee
     .find({ 
-      isCheckedIn: { $ne: true },
+      status: { $ne: 'attended' },
       email: { $exists: true, $ne: "" }
     })
     .lean();
@@ -157,18 +166,33 @@ async function sendReminderEmails(data) {
 }
 
 async function exportAttendeeData() {
-  const allAttendees = await Attendee.find({}).lean();
+  const attendeesWithTickets = await Attendee.aggregate([
+    {
+      $lookup: {
+        from: 'tickets',
+        localField: '_id',
+        foreignField: 'attendeeId',
+        as: 'ticket'
+      }
+    },
+    {
+      $unwind: {
+        path: '$ticket',
+        preserveNullAndEmptyArrays: true
+      }
+    }
+  ]);
   
-  return allAttendees.map(attendee => ({
-    ticketId: attendee.ticketId,
+  return attendeesWithTickets.map(attendee => ({
+    ticketId: attendee.ticket ? attendee.ticket.ticketId : null,
     name: attendee.name,
     email: attendee.email,
     phone: attendee.phone,
-    collegeName: attendee.collegeName,
+    collegeName: attendee.college,
     department: attendee.department,
     year: attendee.year,
-    isCheckedIn: attendee.isCheckedIn || false,
-    checkInTime: attendee.checkInTime || null,
+    isCheckedIn: attendee.status === 'attended',
+    checkInTime: attendee.status === 'attended' ? attendee.updatedAt : null,
     createdAt: attendee.createdAt || null
   }));
 }

@@ -34,7 +34,7 @@ const Attendee = mongoose.models.Attendee || mongoose.model('Attendee', new mong
             message: 'Invalid phone number format (must be 7-15 digits)'
         }
     },
-    collegeName: {
+    college: {
         type: String,
         trim: true,
         maxlength: 200
@@ -49,42 +49,24 @@ const Attendee = mongoose.models.Attendee || mongoose.model('Attendee', new mong
         trim: true,
         maxlength: 50
     },
-    ticketId: {
+    registrationDate: {
+        type: Date,
+        default: Date.now
+    },
+    registrationId: {
         type: String,
-        required: true,
         unique: true,
-        uppercase: true,
-        validate: {
-            validator: function(ticketId) {
-                return /^SHAKTI2025-[A-Z0-9-]+$/i.test(ticketId);
-            },
-            message: 'Invalid ticket ID format (must start with SHAKTI2025-)'
-        }
+        sparse: true
     },
-    isCheckedIn: {
-        type: Boolean,
-        default: false
+    status: {
+        type: String,
+        enum: ['registered', 'ticket_sent', 'attended', 'cancelled'],
+        default: 'registered'
     },
-    checkInTime: {
-        type: Date,
-        default: null
-    },
-    scanCount: {
-        type: Number,
-        default: 0,
-        min: 0
-    },
-    lastScanTime: {
-        type: Date,
-        default: null
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+    additionalData: {
+        type: Map,
+        of: String,
+        default: new Map()
     }
 }, {
     timestamps: true,
