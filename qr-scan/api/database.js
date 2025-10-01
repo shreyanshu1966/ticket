@@ -18,13 +18,12 @@ const connectToDatabase = async () => {
 
         console.log('Connecting to MongoDB...');
         
-        // Serverless-optimized connection options
+        // Serverless-optimized connection options for Mongoose 8.x
         const options = {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            maxPoolSize: 5, // Reduced for serverless
+            maxPoolSize: 5,
             bufferCommands: false,
-            bufferMaxEntries: 0,
         };
 
         await mongoose.connect(mongoUri, options);

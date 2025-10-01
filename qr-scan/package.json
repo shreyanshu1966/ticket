@@ -15,7 +15,8 @@
     "qrcode-reader": "^1.0.4",
     "jimp": "^0.22.0",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
   },
   "engines": {
     "node": ">=18.0.0"
