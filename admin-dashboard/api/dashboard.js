@@ -1,4 +1,5 @@
 import { connectToDatabase } from './database.js';
+import { Attendee, Ticket, AttendanceLog } from './models.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -16,11 +17,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const db = await connectToDatabase();
-    const collection = db.collection('attendees');
+    await connectToDatabase();
 
     // Get all attendees
-    const attendees = await collection.find({}).toArray();
+    const attendees = await Attendee.find({}).sort({ name: 1 }).lean();
     
     // Calculate statistics
     const stats = {

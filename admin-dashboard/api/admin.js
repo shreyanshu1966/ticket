@@ -1,4 +1,5 @@
 import { connectToDatabase } from './database.js';
+import { Attendee, Ticket, AttendanceLog } from './models.js';
 import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
@@ -13,16 +14,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const db = await connectToDatabase();
-    const collection = db.collection('attendees');
+    await connectToDatabase();
 
     if (req.method === 'GET') {
       // Get recent activity logs
-      const recentActivity = await collection
+      const recentActivity = await Attendee
         .find({ isCheckedIn: true })
         .sort({ checkInTime: -1 })
         .limit(50)
-        .toArray();
+        .lean();
 
       const activityLogs = recentActivity.map(attendee => ({
         name: attendee.name,
@@ -43,18 +43,18 @@ export default async function handler(req, res) {
 
       switch (action) {
         case 'send_reminder':
-          await sendReminderEmails(collection, data);
+          await sendReminderEmails(data);
           res.status(200).json({ success: true, message: 'Reminder emails sent' });
           break;
 
         case 'export_data':
-          const exportData = await exportAttendeeData(collection);
+          const exportData = await exportAttendeeData();
           res.status(200).json({ success: true, data: exportData });
           break;
 
         case 'reset_checkin':
           if (data.ticketId) {
-            await collection.updateOne(
+            await Attendee.updateOne(
               { ticketId: data.ticketId },
               { 
                 $unset: { isCheckedIn: "", checkInTime: "" }
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
             const updateData = { ...data };
             delete updateData.ticketId; // Don't update the ticket ID itself
             
-            await collection.updateOne(
+            await Attendee.updateOne(
               { ticketId: data.ticketId },
               { $set: updateData }
             );
@@ -98,14 +98,14 @@ export default async function handler(req, res) {
   }
 }
 
-async function sendReminderEmails(collection, data) {
+async function sendReminderEmails(data) {
   // Get attendees who haven't checked in
-  const notCheckedIn = await collection
+  const notCheckedIn = await Attendee
     .find({ 
       isCheckedIn: { $ne: true },
       email: { $exists: true, $ne: "" }
     })
-    .toArray();
+    .lean();
 
   if (notCheckedIn.length === 0) {
     return { sent: 0, message: 'No attendees to send reminders to' };
@@ -156,8 +156,8 @@ async function sendReminderEmails(collection, data) {
   return { sent: sentCount, total: notCheckedIn.length };
 }
 
-async function exportAttendeeData(collection) {
-  const allAttendees = await collection.find({}).toArray();
+async function exportAttendeeData() {
+  const allAttendees = await Attendee.find({}).lean();
   
   return allAttendees.map(attendee => ({
     ticketId: attendee.ticketId,

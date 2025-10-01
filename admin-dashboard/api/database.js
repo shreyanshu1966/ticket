@@ -1,29 +1,40 @@
-import { MongoClient } from 'mongodb';
+// api/database.js - MongoDB connection for serverless functions
+import mongoose from 'mongoose';
 
-let cachedDb = null;
+let isConnected = false;
 
-async function connectToDatabase() {
-  if (cachedDb) {
-    return cachedDb;
-  }
+const connectToDatabase = async () => {
+    if (isConnected) {
+        console.log('Using existing database connection');
+        return;
+    }
 
-  try {
-    const client = new MongoClient(process.env.MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
+    try {
+        const mongoUri = process.env.MONGODB_URI;
+        
+        if (!mongoUri) {
+            throw new Error('MONGODB_URI environment variable is not set');
+        }
 
-    await client.connect();
-    const db = client.db();
-    cachedDb = db;
-    
-    console.log('Connected to MongoDB Atlas');
-    return db;
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
-  }
-}
+        console.log('Connecting to MongoDB...');
+        
+        // Serverless-optimized connection options for Mongoose 8.x
+        const options = {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 5,
+            bufferCommands: false,
+        };
+
+        await mongoose.connect(mongoUri, options);
+        
+        isConnected = true;
+        console.log('MongoDB connected successfully');
+        
+    } catch (error) {
+        console.error('MongoDB connection error:', error);
+        throw error;
+    }
+};
 
 export { connectToDatabase };
