@@ -184,6 +184,14 @@ class TicketSenderMongoDB {
             
             return attendee;
         } catch (error) {
+            console.error(`❌ Detailed error saving attendee ${attendeeData.Name}:`, {
+                errorCode: error.code,
+                errorMessage: error.message,
+                errorName: error.name,
+                keyPattern: error.keyPattern,
+                keyValue: error.keyValue
+            });
+            
             if (error.code === 11000) {
                 // Duplicate key error - attendee already exists
                 console.log(`👤 Attendee ${attendeeData.Name} already exists (duplicate email detected)`);
