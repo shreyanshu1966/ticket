@@ -1,0 +1,31 @@
+{
+  "name": "shakti-ticket-sender",
+  "version": "1.0.0",
+  "description": "Email ticket sender with QR codes for SHAKTI event attendees",
+  "main": "send-tickets.js",
+  "scripts": {
+    "start": "node send-tickets.js",
+    "start-mongodb": "node send-tickets-mongodb.js",
+    "test": "node test-email.js",
+    "test-mongodb": "node test-mongodb.js",
+    "test-ticket-ids": "node test-ticket-ids.js",
+    "check-duplicates": "node check-duplicates.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.14",
+    "csv-parser": "^3.0.0",
+    "qrcode": "^1.5.3",
+    "canvas": "^2.11.2",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.0.0"
+  },
+  "keywords": [
+    "email",
+    "tickets",
+    "qr-codes",
+    "event-management",
+    "nodemailer"
+  ],
+  "author": "ACES MIT ADT",
+  "license": "MIT"
+}
