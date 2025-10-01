@@ -2,6 +2,7 @@
   "name": "shakti-qr-scanner",
   "version": "1.0.0",
   "description": "Serverless QR Scanner for SHAKTI Event Attendance Tracking",
+  "type": "module",
   "main": "api/scan.js",
   "scripts": {
     "dev": "node local-server.js",

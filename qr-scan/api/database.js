@@ -1,5 +1,5 @@
 // api/database.js - MongoDB connection for serverless functions
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 let isConnected = false;
 
@@ -49,4 +49,4 @@ const connectToDatabase = async () => {
     }
 };
 
-module.exports = connectToDatabase;
+export default connectToDatabase;

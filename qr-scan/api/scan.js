@@ -1,6 +1,6 @@
 // api/scan.js - Main QR code scanning and attendance marking API
-const connectToDatabase = require('./database');
-const { Attendee, Ticket, AttendanceLog } = require('./models');
+import connectToDatabase from './database.js';
+import { Attendee, Ticket, AttendanceLog } from './models.js';
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -51,7 +51,7 @@ const parseQRData = (qrDataString) => {
 };
 
 // Main handler function
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     // Handle preflight CORS requests
     if (req.method === 'OPTIONS') {
         return res.status(200).json({ message: 'OK' });

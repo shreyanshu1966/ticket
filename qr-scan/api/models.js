@@ -1,5 +1,5 @@
 // api/models.js - Mongoose models for serverless functions
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Check if models are already compiled to avoid re-compilation in serverless
 const Attendee = mongoose.models.Attendee || mongoose.model('Attendee', new mongoose.Schema({
@@ -206,8 +206,4 @@ const AttendanceLog = mongoose.models.AttendanceLog || mongoose.model('Attendanc
     collection: 'attendance_logs'
 }));
 
-module.exports = {
-    Attendee,
-    Ticket,
-    AttendanceLog
-};
+export { Attendee, Ticket, AttendanceLog };
