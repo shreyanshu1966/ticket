@@ -1,5 +1,17 @@
 {
-  "name": "shakti-qr-scanner",
+  "name  "dependencies": {
+    "mongoose": "^8.0.0",
+    "qrcode-reader": "^1.0.4",
+    "jimp": "^0.22.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "scripts": {
+    "dev": "node local-server.js",
+    "start": "node local-server.js",
+    "vercel-dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }akti-qr-scanner",
   "version": "1.0.0",
   "description": "Serverless QR Scanner for SHAKTI Event Attendance Tracking",
   "main": "api/scan.js",

@@ -323,7 +323,7 @@
             constructor() {
                 this.video = document.getElementById('qr-video');
                 this.canvas = document.createElement('canvas');
-                this.ctx = this.canvas.getContext('2d');
+                this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
                 this.scanning = false;
                 this.stream = null;
                 
