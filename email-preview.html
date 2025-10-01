@@ -1,17 +1,9 @@
-// Professional Email Template for SHAKTI Event Tickets
-// Enhanced with modern design, responsive layout, and comprehensive information
-
-function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
-    const qrCodeBase64 = qrCodeBuffer.toString('base64');
-    const currentYear = new Date().getFullYear();
-    
-    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHAKTI ${currentYear} - Your Event Ticket</title>
+    <title>SHAKTI 2025 - Your Event Ticket</title>
     <style>
         * {
             margin: 0;
@@ -192,6 +184,19 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             border-radius: 10px;
         }
         
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+        
         .instructions-section {
             background: linear-gradient(135deg, #fff3e0 0%, #ffeccf 100%);
             border-radius: 15px;
@@ -359,18 +364,18 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             <div class="header-content">
                 <div class="logo">🎫 SHAKTI</div>
                 <div class="subtitle">Premium Technology Event</div>
-                <div class="year-badge">${currentYear} Edition</div>
+                <div class="year-badge">2025 Edition</div>
             </div>
         </div>
         
         <div class="content">
             <div class="greeting">
-                Dear <strong>${attendee.name}</strong>,
+                Dear <strong>John Doe</strong>,
             </div>
             
             <div class="confirmation-message">
                 <h3>🎉 Registration Confirmed!</h3>
-                <p>We're thrilled to confirm your registration for SHAKTI ${currentYear}. Your digital ticket has been generated and is ready for use.</p>
+                <p>We're thrilled to confirm your registration for SHAKTI 2025. Your digital ticket has been generated and is ready for use.</p>
             </div>
             
             <div class="ticket-section">
@@ -379,32 +384,32 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">Full Name</div>
-                        <div class="info-value">${attendee.name}</div>
+                        <div class="info-value">John Doe</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Email Address</div>
-                        <div class="info-value">${attendee.email}</div>
+                        <div class="info-value">john.doe@example.com</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Institution</div>
-                        <div class="info-value">${attendee.college || 'N/A'}</div>
+                        <div class="info-value">Tech University</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Department</div>
-                        <div class="info-value">${attendee.department || 'N/A'}</div>
+                        <div class="info-value">Computer Science</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Academic Year</div>
-                        <div class="info-value">${attendee.year || 'N/A'}</div>
+                        <div class="info-value">Final Year</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Contact Number</div>
-                        <div class="info-value">${attendee.phone || 'N/A'}</div>
+                        <div class="info-value">+91 9876543210</div>
                     </div>
                 </div>
                 
                 <h4 style="margin: 25px 0 15px 0; color: #667eea;">🎟️ Your Unique Ticket ID</h4>
-                <div class="ticket-id-highlight">${ticketId}</div>
+                <div class="ticket-id-highlight">SHAKTI2025-ABC123456-001</div>
             </div>
             
             <div class="qr-section">
@@ -412,7 +417,9 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
                 <p style="margin-bottom: 20px; color: #666;">Present this QR code at the event entrance for instant verification</p>
                 
                 <div class="qr-code-container">
-                    <img src="data:image/png;base64,${qrCodeBase64}" alt="Event Entry QR Code" class="qr-code-img">
+                    <div class="qr-placeholder">
+                        QR Code<br>Placeholder<br>📱
+                    </div>
                 </div>
                 
                 <p style="font-size: 0.9rem; color: #888; margin-top: 15px;">
@@ -423,7 +430,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             <div class="event-details">
                 <h3 class="section-title">📅 Event Information</h3>
                 <div style="color: #1976d2; font-weight: 500;">
-                    <p><strong>Event:</strong> SHAKTI ${currentYear} - Technology & Innovation Summit</p>
+                    <p><strong>Event:</strong> SHAKTI 2025 - Technology & Innovation Summit</p>
                     <p><strong>Venue:</strong> To be announced via email and website</p>
                     <p><strong>Timing:</strong> Event schedule will be shared separately</p>
                     <p><strong>Duration:</strong> Full-day event with networking sessions</p>
@@ -439,7 +446,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
                     <li>Mobile screenshots of the QR code are completely acceptable</li>
                     <li>Follow the event dress code: Smart casual or formal attire</li>
                     <li>Networking lunch and refreshments will be provided</li>
-                    <li>Photography and social media sharing is encouraged with #SHAKTI${currentYear}</li>
+                    <li>Photography and social media sharing is encouraged with #SHAKTI2025</li>
                 </ul>
             </div>
             
@@ -464,7 +471,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             </div>
             
             <div style="text-align: center; margin: 40px 0; color: #667eea; font-size: 1.1rem;">
-                <strong>We're excited to see you at SHAKTI ${currentYear}!</strong><br>
+                <strong>We're excited to see you at SHAKTI 2025!</strong><br>
                 <em>Get ready for an inspiring day of technology, innovation, and networking.</em>
             </div>
         </div>
@@ -473,7 +480,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             <div class="footer-content">
                 <div class="team-signature">
                     <strong>Best Regards,</strong><br>
-                    The SHAKTI ${currentYear} Organizing Committee
+                    The SHAKTI 2025 Organizing Committee
                 </div>
                 
                 <div class="social-links">
@@ -487,7 +494,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
             <div class="divider"></div>
             
             <div class="copyright">
-                <p>© ${currentYear} SHAKTI Technology Event. All rights reserved.</p>
+                <p>© 2025 SHAKTI Technology Event. All rights reserved.</p>
                 <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">
                     This is an automated email. Please do not reply to this address.
                 </p>
@@ -496,12 +503,3 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
     </div>
 </body>
 </html>
-    `;
-}
-
-// Export with the correct function name that the sender scripts expect
-function generateTicketTemplate(attendee, qrCodeBase64, ticketId) {
-    return generateEmailTemplate(attendee, ticketId, Buffer.from(qrCodeBase64, 'base64'));
-}
-
-module.exports = { generateTicketTemplate };

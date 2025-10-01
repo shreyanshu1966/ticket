@@ -499,9 +499,4 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
     `;
 }
 
-// Export with the correct function name that the sender scripts expect
-function generateTicketTemplate(attendee, qrCodeBase64, ticketId) {
-    return generateEmailTemplate(attendee, ticketId, Buffer.from(qrCodeBase64, 'base64'));
-}
-
-module.exports = { generateTicketTemplate };
+module.exports = generateEmailTemplate;

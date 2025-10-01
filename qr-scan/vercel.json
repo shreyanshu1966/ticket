@@ -20,9 +20,9 @@
       "dest": "/public/$1"
     }
   ],
-  "env": {
-    "MONGODB_URI": "@mongodb-uri",
-    "EVENT_NAME": "@event-name",
-    "ADMIN_SECRET": "@admin-secret"
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
   }
 }
