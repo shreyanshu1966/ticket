@@ -1,5 +1,9 @@
 // Professional Email Template for SHAKTI Event Tickets
 // Enhanced with modern design, responsive layout, and comprehensive information
+// Updated with compressed banner header
+
+// Import compressed banner base64 data
+const bannerBase64 = require('./banner-compressed-base64.js');
 
 function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
     const qrCodeBase64 = qrCodeBuffer.toString('base64');
@@ -37,48 +41,17 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            position: relative;
             text-align: center;
-            padding: 40px 30px;
-            position: relative;
+            padding: 0;
+            background: #ffffff;
         }
         
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="80" r="2.5" fill="rgba(255,255,255,0.1)"/></svg>');
-        }
-        
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }
-        
-        .year-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-top: 10px;
+        .banner-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 20px 20px 0 0;
         }
         
         .content {
@@ -356,11 +329,7 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="header-content">
-                <div class="logo">🎫 SHAKTI</div>
-                <div class="subtitle">Premium Technology Event</div>
-                <div class="year-badge">${currentYear} Edition</div>
-            </div>
+            <img src="${bannerBase64.dataUrl}" alt="SHAKTI Event Banner" class="banner-image">
         </div>
         
         <div class="content">
@@ -499,4 +468,4 @@ function generateEmailTemplate(attendee, ticketId, qrCodeBuffer) {
     `;
 }
 
-module.exports = generateEmailTemplate;
+module.exports = { generateEmailTemplate };

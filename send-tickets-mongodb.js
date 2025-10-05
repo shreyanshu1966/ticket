@@ -137,16 +137,40 @@ class TicketSenderMongoDB {
     async generateQRCode(data) {
         try {
             const qrCodeDataURL = await QRCode.toDataURL(data, {
+                type: 'image/png',  // Explicitly specify PNG format
                 width: config.qr.size,
                 margin: 2,
                 color: {
                     dark: '#000000',
                     light: '#FFFFFF'
-                }
+                },
+                errorCorrectionLevel: 'M',  // Medium error correction
+                quality: 0.92  // High quality
             });
+            // Return base64 string without data URL prefix
             return qrCodeDataURL.split(',')[1];
         } catch (error) {
             console.error('❌ Error generating QR code:', error);
+            throw error;
+        }
+    }
+
+    // Generate QR code as PNG buffer for attachment
+    async generateQRCodeBuffer(data) {
+        try {
+            return await QRCode.toBuffer(data, {
+                type: 'png',  // PNG format
+                width: config.qr.size,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'M',
+                quality: 0.92
+            });
+        } catch (error) {
+            console.error('❌ Error generating QR code buffer:', error);
             throw error;
         }
     }
@@ -284,9 +308,9 @@ class TicketSenderMongoDB {
     }
 
     // Send email to individual attendee
-    async sendTicketEmail(attendee, attendeeDoc, ticketDoc, qrCodeBase64) {
+    async sendTicketEmail(attendee, attendeeDoc, ticketDoc, qrCodeBuffer) {
         try {
-            const htmlContent = generateTicketTemplate(attendee, qrCodeBase64, ticketDoc.ticketId);
+            const htmlContent = generateTicketTemplate(attendee, 'placeholder', ticketDoc.ticketId);
             
             const mailOptions = {
                 from: `"${config.sender.name}" <${config.sender.email}>`,
@@ -295,9 +319,13 @@ class TicketSenderMongoDB {
                 html: htmlContent,
                 attachments: [
                     {
+                        filename: 'banner.jpg',
+                        path: './banner-compressed.jpg',
+                        cid: 'banner'
+                    },
+                    {
                         filename: `${config.event.name}-ticket-${ticketDoc.ticketId}.png`,
-                        content: qrCodeBase64,
-                        encoding: 'base64',
+                        content: qrCodeBuffer,
                         cid: 'qrcode'
                     }
                 ]
@@ -483,11 +511,11 @@ class TicketSenderMongoDB {
 
                     // Send email only if not already sent
                     if (!ticketDoc.emailSent) {
-                        // Generate QR code image
-                        const qrCodeBase64 = await this.generateQRCode(ticketDoc.qrCodeData);
+                        // Generate QR code buffer for attachment
+                        const qrCodeBuffer = await this.generateQRCodeBuffer(ticketDoc.qrCodeData);
                         
                         // Send email
-                        await this.sendTicketEmail(attendee, attendeeDoc, ticketDoc, qrCodeBase64);
+                        await this.sendTicketEmail(attendee, attendeeDoc, ticketDoc, qrCodeBuffer);
                     } else {
                         console.log(`📧 Email already sent for ${attendee.Name} (${ticketDoc.ticketId})`);
                     }

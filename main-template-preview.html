@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Template Preview - SHAKTI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .template-preview {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .template-title {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .template-content {
+            padding: 20px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎫 SHAKTI Main Email Template</h1>
+        <p>Clean banner-only header design</p>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">42912</div>
+                <div class="stat-label">Banner Size (bytes)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1398×341</div>
+                <div class="stat-label">Banner Dimensions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">56KB</div>
+                <div class="stat-label">Base64 Data Size</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Active Template</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="template-preview">
+        <h2 class="template-title">Main Template (email-template.js)</h2>
+        <div class="template-content">
+            <iframe src="preview-main-template.html"></iframe>
+        </div>
+    </div>
+</body>
+</html>

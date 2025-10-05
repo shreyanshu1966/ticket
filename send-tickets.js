@@ -65,12 +65,15 @@ class TicketSender {
     async generateQRCode(data) {
         try {
             const qrCodeDataURL = await QRCode.toDataURL(data, {
+                type: 'image/png',  // Explicitly specify PNG format
                 width: config.qr.size,
                 margin: 2,
                 color: {
                     dark: '#000000',
                     light: '#FFFFFF'
-                }
+                },
+                errorCorrectionLevel: 'M',  // Medium error correction
+                quality: 0.92  // High quality
             });
             // Remove data URL prefix to get base64 string
             return qrCodeDataURL.split(',')[1];
@@ -80,10 +83,30 @@ class TicketSender {
         }
     }
 
-    // Send email to individual attendee
-    async sendTicketEmail(attendee, ticketId, qrCodeBase64) {
+    // Generate QR code as PNG buffer for attachment
+    async generateQRCodeBuffer(data) {
         try {
-            const htmlContent = generateTicketTemplate(attendee, qrCodeBase64, ticketId);
+            return await QRCode.toBuffer(data, {
+                type: 'png',  // PNG format
+                width: config.qr.size,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'M',
+                quality: 0.92
+            });
+        } catch (error) {
+            console.error('❌ Error generating QR code buffer:', error);
+            throw error;
+        }
+    }
+
+    // Send email to individual attendee
+    async sendTicketEmail(attendee, ticketId, qrCodeBuffer) {
+        try {
+            const htmlContent = generateTicketTemplate(attendee, 'placeholder', ticketId);
             
             const mailOptions = {
                 from: `"${config.sender.name}" <${config.sender.email}>`,
@@ -92,9 +115,13 @@ class TicketSender {
                 html: htmlContent,
                 attachments: [
                     {
+                        filename: 'banner.jpg',
+                        path: './banner-compressed.jpg',
+                        cid: 'banner'
+                    },
+                    {
                         filename: `${config.event.name}-ticket-${ticketId}.png`,
-                        content: qrCodeBase64,
-                        encoding: 'base64',
+                        content: qrCodeBuffer,
                         cid: 'qrcode'
                     }
                 ]
@@ -155,11 +182,11 @@ class TicketSender {
                             // Generate QR code data
                             const qrData = this.generateQRData(attendee, ticketId);
                             
-                            // Generate QR code image
-                            const qrCodeBase64 = await this.generateQRCode(qrData);
+                            // Generate QR code buffer
+                            const qrCodeBuffer = await this.generateQRCodeBuffer(qrData);
                             
                             // Send email
-                            await this.sendTicketEmail(attendee, ticketId, qrCodeBase64);
+                            await this.sendTicketEmail(attendee, ticketId, qrCodeBuffer);
                             
                             // Add delay between emails (1 second)
                             if (i < attendees.length - 1) {
