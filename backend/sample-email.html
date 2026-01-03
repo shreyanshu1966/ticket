@@ -1,0 +1,158 @@
+
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .detail-row:last-child { border-bottom: none; }
+          .label { font-weight: bold; color: #555; }
+          .value { color: #333; }
+          .success-badge { background: #10B981; color: white; padding: 8px 16px; border-radius: 20px; display: inline-block; margin: 10px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .event-info { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 20px; border-radius: 8px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Registration Confirmed!</h1>
+            <p>Welcome to ACD 2025</p>
+          </div>
+          
+          <div class="content">
+            <div class="success-badge">✅ Payment Successful</div>
+            
+            <p>Dear <strong>John Doe</strong>,</p>
+            
+            <p>Thank you for registering for ACD 2025! Your payment has been successfully processed and your registration is now confirmed.</p>
+            
+            <div class="event-info">
+              <h3>🎪 Event Information</h3>
+              <p><strong>Event:</strong> ACD 2025</p>
+              <p><strong>Dates:</strong> January 29-30, 2026</p>
+              <p><strong>Venue:</strong> Will be announced soon</p>
+              <p><strong>Time:</strong> 9:00 AM onwards</p>
+              <p><strong>Entry:</strong> Show your e-ticket below at the venue</p>
+            </div>
+            
+            <div class="details">
+              <h3>Registration Details</h3>
+              <div class="detail-row">
+                <span class="label">Registration ID:</span>
+                <span class="value">677a1b2c3d4e5f6789012345</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Ticket Number:</span>
+                <span class="value">ACD2025-8053</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Name:</span>
+                <span class="value">John Doe</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Email:</span>
+                <span class="value">john.doe@example.com</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">College/University:</span>
+                <span class="value">Test University</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Year/Level:</span>
+                <span class="value">Final Year</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Amount Paid:</span>
+                <span class="value">₹199</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Registration Date:</span>
+                <span class="value">3/1/2026, 8:42:16 pm</span>
+              </div>
+            </div>
+            
+            <h2 style="text-align: center; color: #667eea;">🎫 Your E-Ticket</h2>
+            <div style="text-align: center;">
+              
+    <div style="max-width: 400px; margin: 20px auto; border: 2px solid #667eea; border-radius: 15px; overflow: hidden; font-family: Arial, sans-serif;">
+      <!-- Ticket Header -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center;">
+        <h2 style="margin: 0; font-size: 24px;">🎫 EVENT TICKET</h2>
+        <h3 style="margin: 5px 0; font-size: 18px;">ACD 2025</h3>
+        <p style="margin: 5px 0; font-size: 14px;">January 29-30, 2026</p>
+      </div>
+      
+      <!-- Ticket Body -->
+      <div style="padding: 20px; background: white;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="display: inline-block; padding: 10px; background: #f9f9f9; border-radius: 8px;">
+            <!-- Embedded QR Code -->
+            <img src="data:image/png;base64,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" alt="Entry QR Code" style="display: block; width: 150px; height: 150px; border: none; border-radius: 4px;" />
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">Scan at venue entry</p>
+          </div>
+          <!-- Fallback text in case image doesn't load -->
+          <p style="font-size: 11px; color: #888; margin-top: 10px;">
+            If QR code doesn't display, please use the attached QR code image
+          </p>
+        </div>
+        
+        <div style="border-top: 2px dashed #ccc; padding-top: 15px;">
+          <p style="margin: 5px 0; font-size: 16px;"><strong>Ticket #:</strong> ACD2025-8053</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Name:</strong> John Doe</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>College:</strong> Test University</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Year:</strong> Final Year</p>
+          <p style="margin: 5px 0; font-size: 12px; color: #666;"><strong>ID:</strong> 677a1b2c3d4e5f6789012345</p>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #667eea;">
+          <p style="margin: 0; font-size: 12px; color: #555;">
+            📍 <strong>Venue:</strong> To be announced<br>
+            ⏰ <strong>Time:</strong> 9:00 AM onwards<br>
+            📱 <strong>Instructions:</strong> Show this ticket at entry
+          </p>
+        </div>
+      </div>
+      
+      <!-- Ticket Footer -->
+      <div style="background: #f8f9fa; padding: 10px; text-align: center; border-top: 1px solid #eee;">
+        <p style="margin: 0; font-size: 11px; color: #666;">
+          Valid for ACD 2025 Event Only • Keep this ticket safe
+        </p>
+      </div>
+    </div>
+  
+            </div>
+            
+            <h3>Important Instructions:</h3>
+            <ul>
+              <li><strong>Save this email</strong> - It contains your entry ticket</li>
+              <li><strong>Show the QR code</strong> at the venue for entry</li>
+              <li><strong>Arrive early</strong> - Entry starts at 9:00 AM</li>
+              <li><strong>Bring valid ID</strong> for verification</li>
+              <li><strong>Don't share your ticket</strong> - Each ticket is unique</li>
+            </ul>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h4 style="margin-top: 0; color: #856404;">📱 Entry Process:</h4>
+              <p style="margin-bottom: 0; color: #856404;">1. Show this email with QR code at entry gate<br>
+              2. Our team will scan your QR code<br>
+              3. Your details will be verified<br>
+              4. Entry will be confirmed!</p>
+            </div>
+            
+            <div class="footer">
+              <p>Thank you for choosing ACD 2025!</p>
+              <p><strong>Event Organization Team</strong></p>
+              <p>This is an automated email. Please do not reply to this message.</p>
+              <p>For support, contact us at mail@acesmitadt.com</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    

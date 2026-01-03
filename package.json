@@ -1,32 +1,32 @@
 {
-  "name": "shakti-ticket-sender",
-  "version": "1.0.0",
-  "description": "Email ticket sender with QR codes for SHAKTI event attendees",
-  "main": "send-tickets.js",
+  "name": "ticket",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "start": "node send-tickets.js",
-    "start-mongodb": "node send-tickets-mongodb.js",
-    "test": "node test-email.js",
-    "test-mongodb": "node test-mongodb.js",
-    "test-ticket-ids": "node test-ticket-ids.js",
-    "check-duplicates": "node check-duplicates.js"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "canvas": "^2.11.2",
-    "csv-parser": "^3.0.0",
-    "dotenv": "^16.4.5",
-    "mongoose": "^8.0.0",
-    "nodemailer": "^6.9.14",
-    "qrcode": "^1.5.3",
-    "sharp": "^0.34.4"
+    "@yudiel/react-qr-scanner": "^2.5.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.11.0"
   },
-  "keywords": [
-    "email",
-    "tickets",
-    "qr-codes",
-    "event-management",
-    "nodemailer"
-  ],
-  "author": "ACES MIT ADT",
-  "license": "MIT"
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.3",
+    "vite": "^7.2.4"
+  }
 }

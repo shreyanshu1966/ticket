@@ -1,0 +1,29 @@
+
+ACD 2025 Event Registration Confirmation
+
+Dear John Doe,
+
+Your registration has been confirmed! Here are your details:
+
+EVENT INFORMATION:
+- Event: ACD 2025
+- Dates: January 29-30, 2026
+- Venue: Will be announced soon
+- Time: 9:00 AM onwards
+
+REGISTRATION DETAILS:
+Registration ID: 677a1b2c3d4e5f6789012345
+Ticket Number: ACD2025-8053
+Name: John Doe
+Email: john.doe@example.com
+College: Test University
+Year: Final Year
+Amount Paid: ₹199
+Registration Date: 3/1/2026, 8:42:16 pm
+
+IMPORTANT: Show this email with QR code at the venue for entry.
+
+Thank you for registering for ACD 2025!
+
+Event Organization Team
+    
