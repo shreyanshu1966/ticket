@@ -7,10 +7,11 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Email Templates
 // Registration Success Email Template
 const generateRegistrationSuccessEmail = (registrationData) => {
-  const { name, email, college, year, amount, _id, createdAt } = registrationData
+  // Convert Mongoose document to plain object if needed
+  const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+  const { name, email, college, year, amount, _id, createdAt } = regData
 
   return {
     subject: 'Registration Confirmed - ACD 2025',
@@ -133,7 +134,9 @@ Event Organization Team
 
 // E-Ticket Email Template
 const generateTicketEmail = async (registrationData) => {
-  const { name, email, _id } = registrationData
+  // Convert Mongoose document to plain object if needed
+  const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+  const { name, email, _id, college, year, amount } = regData
 
   // Generate ticket number and QR code buffer
   const ticketNumber = generateTicketNumber()
@@ -144,9 +147,14 @@ const generateTicketEmail = async (registrationData) => {
     email
   })
 
-  // Generate ticket HTML (now uses CID reference)
+  // Generate ticket HTML (now uses CID reference) with all required fields
   const ticketHTML = generateTicketHTML({
-    ...registrationData,
+    name,
+    email,
+    college,
+    year,
+    amount,
+    _id,
     ticketNumber
   })
 
