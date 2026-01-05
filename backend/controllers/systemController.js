@@ -1,14 +1,44 @@
 import { sendTestEmail } from '../services/emailService.js'
 import { validationResult } from 'express-validator'
+import razorpay from '../config/razorpay.js'
 
-// Health check
-export const healthCheck = (req, res) => {
-  res.json({ 
-    status: 'OK', 
+// Health check with enhanced connectivity tests
+export const healthCheck = async (req, res) => {
+  const healthStatus = {
+    status: 'OK',
     message: 'Event Registration Backend is running',
     timestamp: new Date().toISOString(),
-    emailConfigured: !!process.env.EMAIL_USER
-  })
+    services: {
+      database: 'OK',
+      email: !!process.env.EMAIL_USER,
+      razorpay: 'OK'
+    }
+  }
+
+  try {
+    // Test Razorpay connectivity by fetching a dummy order (will fail but shows API connectivity)
+    try {
+      await razorpay.orders.fetch('dummy_order_id')
+    } catch (razorpayError) {
+      // Expected error for dummy order, but if we get network error, mark as down
+      if (razorpayError.message.includes('ENOTFOUND') || 
+          razorpayError.message.includes('ECONNREFUSED') || 
+          razorpayError.message.includes('timeout')) {
+        healthStatus.services.razorpay = 'DOWN'
+        healthStatus.status = 'DEGRADED'
+      }
+    }
+
+    res.json(healthStatus)
+  } catch (error) {
+    console.error('Health check error:', error)
+    res.status(503).json({
+      status: 'ERROR',
+      message: 'Service health check failed',
+      timestamp: new Date().toISOString(),
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error'
+    })
+  }
 }
 
 // Test email endpoint

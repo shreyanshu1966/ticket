@@ -43,7 +43,25 @@ EMAIL_USER=your-email@yahoo.com
 EMAIL_PASSWORD=your-app-password
 ```
 
-### Custom SMTP
+### ACES MITADT Custom SMTP (Current Configuration)
+```env
+EMAIL_HOST=mail.acesmitadt.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=mail@acesmitadt.com
+EMAIL_PASSWORD=your-password
+EMAIL_FROM=ACES <mail@acesmitadt.com>
+```
+
+**SSL/TLS Settings:**
+- Username: mail@acesmitadt.com
+- Incoming Server: mail.acesmitadt.com
+- IMAP Port: 993 | POP3 Port: 995
+- Outgoing Server: mail.acesmitadt.com
+- SMTP Port: 465
+- Authentication required for IMAP, POP3, and SMTP
+
+### Other Custom SMTP
 ```env
 EMAIL_HOST=your-smtp-server.com
 EMAIL_PORT=587

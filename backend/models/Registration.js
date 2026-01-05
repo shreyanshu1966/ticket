@@ -36,7 +36,7 @@ const registrationSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'completed', 'failed'],
+    enum: ['pending', 'completed', 'failed', 'verification_failed'],
     default: 'pending'
   },
   razorpayOrderId: {
@@ -44,6 +44,28 @@ const registrationSchema = new mongoose.Schema({
   },
   razorpayPaymentId: {
     type: String
+  },
+  paymentId: {
+    type: String
+  },
+  orderId: {
+    type: String
+  },
+  paymentDate: {
+    type: Date
+  },
+  verificationTime: {
+    type: Number // Time taken for verification in ms
+  },
+  verificationError: {
+    type: String
+  },
+  emailSentAt: {
+    type: Date
+  },
+  ticketGenerated: {
+    type: Boolean,
+    default: false
   },
   amount: {
     type: Number,

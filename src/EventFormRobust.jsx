@@ -67,17 +67,8 @@ function EventForm() {
   // Check and ensure Razorpay is loaded
   const checkRazorpayStatus = async (retryAttempt = 0) => {
     try {
-      // Check if Razorpay failed to load completely
-      if (window.razorpayLoadFailed) {
-        setRazorpayStatus('failed')
-        return false
-      }
-      
       if (typeof window.Razorpay !== 'undefined') {
         setRazorpayStatus('loaded')
-        if (retryAttempt > 0) {
-          console.log('✅ Razorpay loaded successfully after retry')
-        }
         return true
       }
       
@@ -86,20 +77,19 @@ function EventForm() {
       
       if (typeof window.Razorpay !== 'undefined') {
         setRazorpayStatus('loaded')
-        console.log('✅ Razorpay loaded successfully')
         return true
       }
       
       throw new Error('Razorpay not loaded')
     } catch (error) {
       if (retryAttempt < MAX_RETRY_ATTEMPTS - 1) {
-        console.log(`🔄 Retrying Razorpay check (attempt ${retryAttempt + 2})...`)
+        console.log(`Retrying Razorpay check (attempt ${retryAttempt + 2})...`)
         setRazorpayStatus('retrying')
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
         return await checkRazorpayStatus(retryAttempt + 1)
       }
       
-      console.error('❌ Razorpay loading failed after all retries')
+      console.error('Razorpay loading failed after all retries')
       setRazorpayStatus('failed')
       return false
     }
@@ -119,24 +109,6 @@ function EventForm() {
       }
     }
     
-    // Add network status listeners
-    const handleOnline = () => {
-      console.log('Network connection restored')
-      setNetworkStatus('online')
-      if (error && error.includes('internet connection')) {
-        setError(null)
-      }
-    }
-    
-    const handleOffline = () => {
-      console.log('Network connection lost')
-      setNetworkStatus('offline')
-      setError('Internet connection lost. Please check your connection.')
-    }
-    
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    
     initializeSystems()
     
     // Cleanup function
@@ -147,8 +119,6 @@ function EventForm() {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current)
       }
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
     }
   }, [])
 
@@ -260,59 +230,6 @@ function EventForm() {
     setRetryCount(0)
   }
 
-  // Check payment status with retry mechanism
-  const checkPaymentStatus = async (paymentId, registrationId, retryAttempt = 0) => {
-    try {
-      console.log(`🔍 Checking payment status (attempt ${retryAttempt + 1})...`)
-      
-      const statusResult = await robustFetch(buildApiUrl(API_ENDPOINTS.CHECK_VERIFICATION), {
-        method: 'POST',
-        body: JSON.stringify({
-          paymentId,
-          registrationId
-        })
-      })
-      
-      if (statusResult.success) {
-        const data = statusResult.data
-        console.log('✅ Payment status check result:', data)
-        
-        if (data.paymentStatus === 'completed') {
-          setRegistrationData(data)
-          setPaymentStatus('completed')
-          setIsSubmitted(true)
-          
-          // Show success message based on ticket generation status
-          setTimeout(() => {
-            if (data.ticketGenerated && data.emailSent) {
-              alert('🎉 Payment was successful! Check your email for the ticket.')
-            } else if (data.paymentStatus === 'completed') {
-              alert('🎉 Payment was successful! Your ticket will be emailed shortly. If you don\'t receive it within a few minutes, please contact support with payment ID: ' + paymentId)
-            }
-          }, 500)
-          
-          return true
-        } else if (data.paymentStatus === 'pending' && retryAttempt < MAX_RETRY_ATTEMPTS - 1) {
-          // Payment might still be processing, retry
-          console.log('⏳ Payment still pending, retrying...')
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryAttempt + 1)))
-          return await checkPaymentStatus(paymentId, registrationId, retryAttempt + 1)
-        } else {
-          throw new Error(`Payment status: ${data.paymentStatus}`)
-        }
-      } else {
-        throw new Error(statusResult.message || 'Failed to check payment status')
-      }
-    } catch (error) {
-      if (retryAttempt < MAX_RETRY_ATTEMPTS - 1) {
-        console.log(`⏳ Status check failed, retrying in ${RETRY_DELAY * (retryAttempt + 1)}ms...`)
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryAttempt + 1)))
-        return await checkPaymentStatus(paymentId, registrationId, retryAttempt + 1)
-      }
-      throw error
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -404,36 +321,17 @@ function EventForm() {
               setPaymentStatus('completed')
               setIsSubmitted(true)
               
-              // Show success message based on email status
+              // Show success message
               setTimeout(() => {
-                if (verifyResult.data.emailSent !== false) {
-                  alert('🎉 Registration successful! Check your email for the ticket.')
-                } else {
-                  alert('🎉 Registration and payment successful! Your ticket will be emailed shortly. If you don\'t receive it, please contact support with payment ID: ' + response.razorpay_payment_id)
-                }
+                alert('🎉 Registration successful! Check your email for the ticket.')
               }, 500)
             } else {
               throw new Error(verifyResult.message || 'Payment verification failed')
             }
           } catch (verificationError) {
             console.error('Payment verification error:', verificationError)
-            
-            // If verification times out, try to check status
-            if (verificationError.message.includes('timed out') || verificationError.message.includes('Request timed out')) {
-              console.log('⏰ Verification timed out, checking payment status...')
-              setPaymentStatus('checking_status')
-              
-              try {
-                await checkPaymentStatus(response.razorpay_payment_id, result.registrationId)
-              } catch (statusError) {
-                console.error('Status check failed:', statusError)
-                setPaymentStatus('verification_failed')
-                setError(`Payment verification timed out: ${verificationError.message}. Your payment may have been processed. Please contact support with payment ID: ${response.razorpay_payment_id}`)
-              }
-            } else {
-              setPaymentStatus('verification_failed')
-              setError(`Payment verification failed: ${verificationError.message}. Your payment may have been processed. Please contact support with payment ID: ${response.razorpay_payment_id}`)
-            }
+            setPaymentStatus('verification_failed')
+            setError(`Payment verification failed: ${verificationError.message}. Your payment may have been processed. Please contact support with payment ID: ${response.razorpay_payment_id}`)
           } finally {
             setIsProcessing(false)
           }
@@ -463,17 +361,6 @@ function EventForm() {
       }
       
       console.log('Creating Razorpay instance...')
-      
-      // Final validation before opening payment
-      if (typeof window.Razorpay === 'undefined') {
-        throw new Error('Payment system failed to load. Please refresh the page and try again.')
-      }
-      
-      // Check network connectivity
-      if (!navigator.onLine) {
-        throw new Error('No internet connection detected. Please check your connection and try again.')
-      }
-      
       const rzp = new window.Razorpay(options)
       
       // Enhanced error handling for payment failures
@@ -487,21 +374,16 @@ function EventForm() {
         // Handle specific Razorpay error codes
         switch(response.error.code) {
           case 'BAD_REQUEST_ERROR':
-            if (response.error.reason === 'payment_cancelled') {
-              errorMessage = 'Payment was cancelled. You can try again to complete your registration.'
-              setPaymentStatus('cancelled')
-            } else {
-              errorMessage += 'Please check your payment details and try again.'
-            }
+            errorMessage += 'Please check your payment details and try again.'
             break
           case 'GATEWAY_ERROR':
             errorMessage += 'Payment gateway error. Please try a different payment method.'
             break
           case 'NETWORK_ERROR':
-            errorMessage += 'Network connection issue. Please check your internet connection and try again.'
+            errorMessage += 'Network connectivity issue. Please check your internet connection and try again.'
             break
           case 'SERVER_ERROR':
-            errorMessage += 'Payment server is temporarily unavailable. Please try again in a few minutes.'
+            errorMessage += 'Payment service is temporarily unavailable. Please try again in a few minutes.'
             break
           case 'INVALID_REQUEST_ERROR':
             errorMessage += 'Invalid payment request. Please refresh the page and try again.'
@@ -521,44 +403,17 @@ function EventForm() {
         setError(errorMessage)
       })
       
-      // Enhanced error handling for opening payment modal with retry
-      const openPaymentWithRetry = async (retryAttempt = 0) => {
-        try {
-          // Check if there was a chunk loading error
-          if (window.razorpayChunkError) {
-            throw new Error('Razorpay resources failed to load due to network issues')
-          }
-          
-          rzp.open()
-          console.log('✅ Payment modal opened successfully')
-          
-          // Monitor for chunk errors after opening
-          setTimeout(() => {
-            if (window.razorpayChunkError && !document.querySelector('.razorpay-container')) {
-              console.error('❌ Razorpay checkout failed to render')
-              setPaymentStatus('failed')
-              setIsProcessing(false)
-              setError('Payment window failed to load completely. This is usually caused by network issues, firewall settings, or ad blockers. Please try: 1) Disabling ad blocker for this site, 2) Using a different network, 3) Refreshing the page.')
-            }
-          }, 5000)
-        } catch (openError) {
-          console.error(`Failed to open payment modal (attempt ${retryAttempt + 1}):`, openError)
-          
-          if (retryAttempt < 2) {
-            console.log(`🔄 Retrying payment modal in ${RETRY_DELAY}ms...`)
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
-            window.razorpayChunkError = false // Reset for retry
-            return openPaymentWithRetry(retryAttempt + 1)
-          }
-          
-          setPaymentStatus('failed')
-          setIsProcessing(false)
-          setError('Unable to open payment window. This may be caused by: 1) Ad blocker or firewall blocking Razorpay, 2) Poor network connection, 3) Browser popup blocker. Please try disabling ad blockers, using a different browser, or checking your network connection.')
-          return
-        }
+      // Enhanced error handling for opening payment modal
+      try {
+        rzp.open()
+        console.log('✅ Payment modal opened successfully')
+      } catch (openError) {
+        console.error('Failed to open payment modal:', openError)
+        setPaymentStatus('failed')
+        setIsProcessing(false)
+        setError('Unable to open payment window. Please check if popups are blocked and try again.')
+        return
       }
-      
-      await openPaymentWithRetry()
       
     } catch (error) {
       console.error('Registration error:', error)
@@ -678,7 +533,7 @@ function EventForm() {
   return (
     <div className="min-h-screen flex justify-center items-center bg-black px-4">
       <div className="w-full max-w-lg">
-        {/* Status indicators with enhanced error messages */}
+        {/* Status indicators */}
         <div className="mb-4 flex justify-center space-x-4 text-sm">
           <div className={`flex items-center space-x-2 ${networkStatus === 'online' ? 'text-green-400' : 'text-red-400'}`}>
             <div className={`w-2 h-2 rounded-full ${networkStatus === 'online' ? 'bg-green-400' : 'bg-red-400'}`}></div>
@@ -689,31 +544,6 @@ function EventForm() {
             <span>Payment: {razorpayStatus}</span>
           </div>
         </div>
-
-        {/* System status warnings */}
-        {(networkStatus === 'offline' || razorpayStatus === 'failed') && (
-          <div className="mb-4 bg-yellow-950 border border-yellow-800 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-300">System Status Warning</h3>
-                <div className="text-sm text-yellow-200 mt-1">
-                  {networkStatus === 'offline' && (
-                    <p>• Internet connection is unavailable. Please check your network connection.</p>
-                  )}
-                  {razorpayStatus === 'failed' && (
-                    <p>• Payment system is currently unavailable. Try refreshing the page or check your internet connection.</p>
-                  )}
-                  <p className="mt-2 font-medium">Please resolve these issues before attempting registration.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
           <div className="text-center mb-6">
@@ -744,12 +574,6 @@ function EventForm() {
                     <div className="flex items-center justify-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
                       <span>Verifying payment...</span>
-                    </div>
-                  )}
-                  {paymentStatus === 'checking_status' && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>
-                      <span>Checking payment status...</span>
                     </div>
                   )}
                   {paymentStatus === 'cancelled' && <span className="text-yellow-400">Payment cancelled</span>}

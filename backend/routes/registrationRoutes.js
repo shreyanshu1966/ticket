@@ -5,6 +5,7 @@ import {
   createOrder,
   verifyPayment,
   updatePaymentStatus,
+  checkVerificationStatus,
   registerDirect
 } from '../controllers/registrationController.js'
 import { validateRegistration } from '../middleware/validation.js'
@@ -22,6 +23,9 @@ router.post('/create-order', validateRegistration, createOrder)
 
 // Verify payment
 router.post('/verify-payment', verifyPayment)
+
+// Check verification status and resend email if needed
+router.post('/check-verification', checkVerificationStatus)
 
 // Update payment status
 router.patch('/:id/payment', updatePaymentStatus)

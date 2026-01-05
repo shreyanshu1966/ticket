@@ -1,36 +1,26 @@
 import transporter from '../config/nodemailer.js'
 import { generateTicketNumber, generateQRCodeBuffer, generateTicketHTML } from './ticketService.js'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Email Templates
-const generateConfirmationEmail = async (registrationData) => {
+// Registration Success Email Template
+const generateRegistrationSuccessEmail = (registrationData) => {
   const { name, email, college, year, amount, _id, createdAt } = registrationData
-  
-  // Generate ticket number and QR code buffer
-  const ticketNumber = generateTicketNumber()
-  const qrCodeBuffer = await generateQRCodeBuffer({
-    ticketNumber,
-    registrationId: _id,
-    name,
-    email
-  })
-  
-  // Generate ticket HTML (now uses CID reference)
-  const ticketHTML = generateTicketHTML({
-    ...registrationData,
-    ticketNumber
-  })
-  
+
   return {
-    subject: 'ACD 2025 Event Registration Confirmation & E-Ticket',
-    ticketNumber,
-    qrCodeBuffer,
+    subject: 'Registration Confirmed - ACD 2025',
     html: `
       <!DOCTYPE html>
       <html>
       <head>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
           .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
           .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
           .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
@@ -57,13 +47,14 @@ const generateConfirmationEmail = async (registrationData) => {
             
             <p>Thank you for registering for ACD 2025! Your payment has been successfully processed and your registration is now confirmed.</p>
             
+            <p><strong>Note:</strong> You will receive a separate email shortly containing your E-Ticket and QR Code for entry.</p>
+
             <div class="event-info">
               <h3>🎪 Event Information</h3>
               <p><strong>Event:</strong> ACD 2025</p>
               <p><strong>Dates:</strong> January 29-30, 2026</p>
               <p><strong>Venue:</strong> Will be announced soon</p>
               <p><strong>Time:</strong> 9:00 AM onwards</p>
-              <p><strong>Entry:</strong> Show your e-ticket below at the venue</p>
             </div>
             
             <div class="details">
@@ -71,10 +62,6 @@ const generateConfirmationEmail = async (registrationData) => {
               <div class="detail-row">
                 <span class="label">Registration ID:</span>
                 <span class="value">${_id}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Ticket Number:</span>
-                <span class="value">${ticketNumber}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Name:</span>
@@ -100,33 +87,6 @@ const generateConfirmationEmail = async (registrationData) => {
                 <span class="label">Registration Date:</span>
                 <span class="value">${new Date(createdAt).toLocaleString('en-IN')}</span>
               </div>
-            </div>
-            
-            <h2 style="text-align: center; color: #667eea; margin: 30px 0 20px 0;">🎫 Your E-Ticket</h2>
-            <div style="text-align: center; margin: 20px 0;">
-              ${ticketHTML}
-            </div>
-            
-            <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <p style="margin: 0; font-size: 14px; color: #1e40af;">📱 <strong>QR Code Instructions:</strong></p>
-              <p style="margin: 5px 0 0 0; font-size: 12px; color: #1e40af;">Show this QR code on your phone screen or print this email for venue entry</p>
-            </div>
-            
-            <h3>Important Instructions:</h3>
-            <ul>
-              <li><strong>Save this email</strong> - It contains your entry ticket</li>
-              <li><strong>Show the QR code</strong> at the venue for entry</li>
-              <li><strong>Arrive early</strong> - Entry starts at 9:00 AM</li>
-              <li><strong>Bring valid ID</strong> for verification</li>
-              <li><strong>Don't share your ticket</strong> - Each ticket is unique</li>
-            </ul>
-            
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h4 style="margin-top: 0; color: #856404;">📱 Entry Process:</h4>
-              <p style="margin-bottom: 0; color: #856404;">1. Show this email with QR code at entry gate<br>
-              2. Our team will scan your QR code<br>
-              3. Your details will be verified<br>
-              4. Entry will be confirmed!</p>
             </div>
             
             <div class="footer">
@@ -155,7 +115,6 @@ EVENT INFORMATION:
 
 REGISTRATION DETAILS:
 Registration ID: ${_id}
-Ticket Number: ${ticketNumber}
 Name: ${name}
 Email: ${email}
 College: ${college}
@@ -163,7 +122,7 @@ Year: ${year}
 Amount Paid: ₹${amount}
 Registration Date: ${new Date(createdAt).toLocaleString('en-IN')}
 
-IMPORTANT: Show this email with QR code at the venue for entry.
+Note: You will receive a separate email shortly containing your E-Ticket and QR Code for entry.
 
 Thank you for registering for ACD 2025!
 
@@ -172,36 +131,143 @@ Event Organization Team
   }
 }
 
-// Function to send confirmation email
+// E-Ticket Email Template
+const generateTicketEmail = async (registrationData) => {
+  const { name, email, _id } = registrationData
+
+  // Generate ticket number and QR code buffer
+  const ticketNumber = generateTicketNumber()
+  const qrCodeBuffer = await generateQRCodeBuffer({
+    ticketNumber,
+    registrationId: _id,
+    name,
+    email
+  })
+
+  // Generate ticket HTML (now uses CID reference)
+  const ticketHTML = generateTicketHTML({
+    ...registrationData,
+    ticketNumber
+  })
+
+  return {
+    ticketNumber,
+    qrCodeBuffer,
+    subject: 'Your E-Ticket - ACD 2026',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ACD 2026 E-Ticket</title>
+      </head>
+      <body style="margin: 0; padding: 0;">
+        ${ticketHTML}
+      </body>
+      </html>
+    `,
+    text: `
+ACD 2026 E-Ticket
+
+Dear ${name},
+
+Your E-Ticket for ACD 2026
+
+Ticket Number: ${ticketNumber}
+Name: ${name}
+Event: ACD 2026 - Annual Cultural Day
+Date: January 29-30, 2026
+Time: 9:00 AM Onwards
+Location: Auditorium
+
+Please show this ticket at the venue entry.
+
+Event Organization Team
+    `
+  }
+}
+
+// Helper function to send email with retry logic
+const sendEmailWithRetry = async (mailOptions, maxRetries = 3) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📧 Sending email (attempt ${attempt}/${maxRetries})...`);
+      const info = await transporter.sendMail(mailOptions);
+      return info;
+    } catch (error) {
+      lastError = error;
+      console.error(`❌ Email attempt ${attempt} failed:`, error.message);
+
+      // Don't retry on certain errors
+      if (error.code === 'EAUTH' || error.responseCode === 535) {
+        throw error; // Authentication errors won't be fixed by retrying
+      }
+
+      // Wait before retrying (exponential backoff)
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5 seconds
+        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+// Function to send confirmation emails
 export const sendConfirmationEmail = async (registrationData) => {
   try {
-    const emailContent = await generateConfirmationEmail(registrationData)
-    
-    const mailOptions = {
-      from: 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>',
+    const fromAddress = 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
+
+    // 1. Send Registration Success Email
+    const regEmail = generateRegistrationSuccessEmail(registrationData)
+    const regInfo = await sendEmailWithRetry({
+      from: fromAddress,
       to: registrationData.email,
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
+      subject: regEmail.subject,
+      html: regEmail.html,
+      text: regEmail.text
+    })
+    console.log('✅ Registration confirmation email sent:', regInfo.messageId)
+
+    // Small delay between emails to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 2. Send Ticket Email
+    const ticketEmail = await generateTicketEmail(registrationData)
+    const ticketInfo = await sendEmailWithRetry({
+      from: fromAddress,
+      to: registrationData.email,
+      subject: ticketEmail.subject,
+      html: ticketEmail.html,
+      text: ticketEmail.text,
       attachments: [
         {
-          filename: `ACD-2025-Ticket-${emailContent.ticketNumber}.png`,
-          content: emailContent.qrCodeBuffer,
+          filename: `ACD-2025-Ticket-${ticketEmail.ticketNumber}.png`,
+          content: ticketEmail.qrCodeBuffer,
           contentType: 'image/png',
-          cid: 'ticket-qr-code' // Content ID matching the HTML img src="cid:ticket-qr-code"
+          cid: 'ticket-qr-code'
+        },
+        {
+          filename: 'ACES_LOGO.png',
+          path: path.join(__dirname, '../../public/ACES_LOGO-.png'),
+          contentType: 'image/png',
+          cid: 'aces-logo'
         }
       ]
-    }
-    
-    const info = await transporter.sendMail(mailOptions)
-    console.log('✅ Confirmation email sent:', info.messageId)
-    
+    })
+    console.log('✅ Ticket email sent:', ticketInfo.messageId)
+
     // Return ticket information for database update
-    return { 
-      success: true, 
-      messageId: info.messageId,
-      ticketNumber: emailContent.ticketNumber,
-      qrCode: emailContent.qrCodeBuffer.toString('base64') // Store as base64 string in DB
+    return {
+      success: true,
+      messageId: ticketInfo.messageId, // Returning ticket email ID mostly for reference
+      ticketNumber: ticketEmail.ticketNumber,
+      qrCode: ticketEmail.qrCodeBuffer.toString('base64')
     }
   } catch (error) {
     console.error('❌ Email sending failed:', error)
@@ -231,7 +297,7 @@ If you received this email, the email configuration is working correctly!
 
 Timestamp: ${new Date().toLocaleString('en-IN')}`
     }
-    
+
     const info = await transporter.sendMail(mailOptions)
     return { success: true, messageId: info.messageId }
   } catch (error) {
@@ -253,12 +319,12 @@ export const sendBulkNotification = async (recipients, subject, message) => {
     const batchSize = 10
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize)
-      
+
       // Process batch in parallel
       const batchPromises = batch.map(async (recipient) => {
         try {
           const personalizedMessage = message.replace(/\{name\}/g, recipient.name)
-          
+
           const mailOptions = {
             from: 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>',
             to: recipient.email,
@@ -299,11 +365,11 @@ export const sendBulkNotification = async (recipients, subject, message) => {
             `,
             text: `${subject}\n\n${personalizedMessage}\n\nBest regards,\nACD 2025 Team`
           }
-          
+
           const info = await transporter.sendMail(mailOptions)
           console.log(`✅ Bulk email sent to ${recipient.email}:`, info.messageId)
           results.sent++
-          
+
         } catch (error) {
           console.error(`❌ Failed to send email to ${recipient.email}:`, error.message)
           results.failed++
@@ -313,10 +379,10 @@ export const sendBulkNotification = async (recipients, subject, message) => {
           })
         }
       })
-      
+
       // Wait for batch to complete before processing next batch
       await Promise.all(batchPromises)
-      
+
       // Small delay between batches to be respectful to email service
       if (i + batchSize < recipients.length) {
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -331,11 +397,11 @@ export const sendBulkNotification = async (recipients, subject, message) => {
       total: recipients.length,
       errors: results.errors
     }
-    
+
   } catch (error) {
     console.error('❌ Bulk email sending failed:', error)
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error.message,
       sent: 0,
       failed: recipients.length,

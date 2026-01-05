@@ -7,17 +7,22 @@ if (!process.env.EMAIL_HOST) {
 }
 
 // Configure nodemailer
+const host = process.env.EMAIL_HOST || 'mail.acesmitadt.com'
+const port = parseInt(process.env.EMAIL_PORT) || 465
+const secure = port === 465 // Auto-detect secure based on port
+
+console.log(`📧 Configuring email: ${host}:${port} (secure: ${secure})`)
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'mail.acesmitadt.com',
-  port: parseInt(process.env.EMAIL_PORT) || 465,
-  secure: true, // true for port 465, false for other ports
+  host: host,
+  port: port,
+  secure: secure,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
   tls: {
-    rejectUnauthorized: false,
-    minVersion: 'TLSv1.2'
+    rejectUnauthorized: false, // Trust self-signed certs
   },
   debug: process.env.DEBUG_EMAIL === 'true',
   logger: process.env.DEBUG_EMAIL === 'true'

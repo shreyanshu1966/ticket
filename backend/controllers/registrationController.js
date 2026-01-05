@@ -10,7 +10,7 @@ export const getAllRegistrations = async (req, res) => {
     const registrations = await Registration.find()
       .sort({ createdAt: -1 })
       .select('-__v')
-    
+
     res.json({
       success: true,
       count: registrations.length,
@@ -29,7 +29,7 @@ export const getAllRegistrations = async (req, res) => {
 export const getRegistrationById = async (req, res) => {
   try {
     const registration = await Registration.findById(req.params.id).select('-__v')
-    
+
     if (!registration) {
       return res.status(404).json({
         success: false,
@@ -56,6 +56,7 @@ export const createOrder = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
+      console.log('❌ Validation Failed:', JSON.stringify(errors.array(), null, 2))
       return res.status(400).json({
         success: false,
         message: 'Validation errors',
@@ -68,9 +69,29 @@ export const createOrder = async (req, res) => {
     // Check if email already exists
     const existingRegistration = await Registration.findOne({ email })
     if (existingRegistration) {
+      console.log(`⚠️ Duplicate registration attempt for email: ${email}`)
       return res.status(400).json({
         success: false,
         message: 'Email already registered for this event'
+      })
+    }
+
+    // Validate Razorpay credentials before making API call
+    if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'rzp_test_default') {
+      console.error('❌ RAZORPAY_KEY_ID is not configured in .env file')
+      return res.status(500).json({
+        success: false,
+        message: 'Payment system is not configured. Please contact support.',
+        error: 'RAZORPAY_NOT_CONFIGURED'
+      })
+    }
+
+    if (!process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET === 'default_secret') {
+      console.error('❌ RAZORPAY_KEY_SECRET is not configured in .env file')
+      return res.status(500).json({
+        success: false,
+        message: 'Payment system is not configured. Please contact support.',
+        error: 'RAZORPAY_NOT_CONFIGURED'
       })
     }
 
@@ -88,7 +109,39 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    const order = await razorpay.orders.create(options)
+    console.log('📝 Creating Razorpay order with options:', { ...options, notes: { email } })
+
+    let order
+    try {
+      order = await razorpay.orders.create(options)
+      console.log('✅ Razorpay order created successfully:', order.id)
+    } catch (razorpayError) {
+      console.error('❌ Razorpay API Error:', {
+        message: razorpayError.message,
+        statusCode: razorpayError.statusCode,
+        error: razorpayError.error
+      })
+
+      // Handle specific Razorpay errors
+      if (razorpayError.statusCode === 401 || razorpayError.statusCode === 400) {
+        return res.status(500).json({
+          success: false,
+          message: 'Payment gateway authentication failed. Please contact support.',
+          error: 'RAZORPAY_AUTH_ERROR',
+          details: process.env.NODE_ENV === 'development' ? razorpayError.message : undefined
+        })
+      }
+
+      if (razorpayError.message && razorpayError.message.includes('ENOTFOUND')) {
+        return res.status(500).json({
+          success: false,
+          message: 'Unable to connect to payment gateway. Please check your internet connection.',
+          error: 'RAZORPAY_CONNECTION_ERROR'
+        })
+      }
+
+      throw razorpayError
+    }
 
     // Create registration with pending payment
     const registration = new Registration({
@@ -102,6 +155,7 @@ export const createOrder = async (req, res) => {
     })
 
     await registration.save()
+    console.log('✅ Registration created with ID:', registration._id)
 
     res.json({
       success: true,
@@ -112,82 +166,158 @@ export const createOrder = async (req, res) => {
     })
 
   } catch (error) {
-    console.error('Error creating order:', error)
+    console.error('❌ Error creating order:', {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    })
     res.status(500).json({
       success: false,
-      message: 'Error creating payment order'
+      message: 'Error creating payment order. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
+  }
+}
+
+// Verify payment with Razorpay API double-check
+const verifyWithRazorpayAPI = async (paymentId) => {
+  try {
+    console.log(`🔍 Double-checking payment ${paymentId} with Razorpay API...`)
+    const payment = await razorpay.payments.fetch(paymentId)
+
+    console.log('Razorpay API payment status:', {
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+      captured: payment.captured
+    })
+
+    return payment.status === 'captured' || payment.status === 'authorized'
+  } catch (error) {
+    console.error('Error fetching payment from Razorpay API:', error)
+    return false
   }
 }
 
 // Verify payment
 export const verifyPayment = async (req, res) => {
+  let registration = null
+  const startTime = Date.now()
+
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body
 
-    console.log('Payment verification request:', {
+    console.log('🔒 Starting payment verification process:', {
       razorpay_order_id,
       razorpay_payment_id,
-      registrationId
+      registrationId,
+      timestamp: new Date().toISOString()
     })
 
-    // Verify signature
+    // Input validation
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !registrationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required payment verification parameters'
+      })
+    }
+
+    // Find registration first
+    registration = await Registration.findById(registrationId)
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      })
+    }
+
+    // Check if payment is already verified
+    if (registration.paymentStatus === 'completed' && registration.paymentId === razorpay_payment_id) {
+      console.log('⚠️ Payment already verified for this registration')
+      return res.json({
+        success: true,
+        message: 'Payment already verified',
+        data: {
+          id: registration._id,
+          name: registration.name,
+          email: registration.email,
+          phone: registration.phone,
+          college: registration.college,
+          year: registration.year,
+          paymentStatus: registration.paymentStatus,
+          amount: registration.amount,
+          ticketGenerated: registration.ticketGenerated || false,
+          ticketNumber: registration.ticketNumber
+        }
+      })
+    }
+
+    // Step 1: Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(body.toString())
       .digest('hex')
 
-    console.log('Signature verification:', {
+    const signatureValid = expectedSignature === razorpay_signature
+    console.log('🔐 Signature verification:', {
       expected: expectedSignature,
       received: razorpay_signature,
-      isValid: expectedSignature === razorpay_signature
+      isValid: signatureValid
     })
 
-    if (expectedSignature !== razorpay_signature) {
+    if (!signatureValid) {
       console.log('❌ Payment signature verification failed')
       return res.status(400).json({
         success: false,
-        message: 'Payment verification failed'
+        message: 'Payment signature verification failed'
       })
     }
 
-    // Find registration
-    const registration = await Registration.findById(registrationId)
-    if (!registration) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Registration not found' 
+    // Step 2: Double-check with Razorpay API
+    const razorpayApiValid = await verifyWithRazorpayAPI(razorpay_payment_id)
+    if (!razorpayApiValid) {
+      console.log('❌ Razorpay API verification failed')
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed - payment not captured'
       })
     }
 
-    // Update registration with payment details
+    // Step 3: Update registration with payment details (transaction safe)
     registration.paymentStatus = 'completed'
     registration.paymentId = razorpay_payment_id
     registration.orderId = razorpay_order_id
     registration.paymentDate = new Date()
-    
+    registration.verificationTime = Date.now() - startTime
+
     await registration.save()
     console.log('✅ Registration updated with payment details')
 
-    // Send confirmation email with ticket
+    // Step 4: ONLY send email if verification is completely successful
+    let emailResult = { success: false }
     try {
-      const emailResult = await sendConfirmationEmail(registration)
-      
+      console.log('📧 Starting email sending process...')
+      emailResult = await sendConfirmationEmail(registration)
+
       if (emailResult.success) {
         // Update registration with ticket information
         registration.ticketNumber = emailResult.ticketNumber
         registration.qrCode = emailResult.qrCode
         registration.ticketGenerated = true
+        registration.emailSentAt = new Date()
         await registration.save()
-        
-        console.log('✅ Ticket generated and email sent')
+
+        console.log('✅ Ticket generated and email sent successfully')
       } else {
-        console.log('⚠️ Email failed but payment verified')
+        console.log('⚠️ Email failed but payment verified - user can contact support')
       }
     } catch (emailError) {
-      console.error('Email sending error:', emailError)
+      console.error('❌ Email sending error:', emailError)
+      // Don't fail the verification if email fails
     }
+
+    const verificationTime = Date.now() - startTime
+    console.log(`⏱️ Total verification time: ${verificationTime}ms`)
 
     res.json({
       success: true,
@@ -202,15 +332,29 @@ export const verifyPayment = async (req, res) => {
         paymentStatus: registration.paymentStatus,
         amount: registration.amount,
         ticketGenerated: registration.ticketGenerated || false,
-        ticketNumber: registration.ticketNumber
+        ticketNumber: registration.ticketNumber,
+        emailSent: emailResult.success,
+        verificationTime: verificationTime
       }
     })
 
   } catch (error) {
-    console.error('Payment verification error:', error)
+    console.error('❌ Payment verification error:', error)
+
+    // If registration was found but verification failed, mark as failed
+    if (registration && registration.paymentStatus !== 'completed') {
+      try {
+        registration.paymentStatus = 'verification_failed'
+        registration.verificationError = error.message
+        await registration.save()
+      } catch (saveError) {
+        console.error('Error updating registration with failure:', saveError)
+      }
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Payment verification failed',
+      message: 'Payment verification failed: ' + error.message,
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     })
   }
@@ -220,7 +364,7 @@ export const verifyPayment = async (req, res) => {
 export const updatePaymentStatus = async (req, res) => {
   try {
     const { paymentStatus } = req.body
-    
+
     if (!['pending', 'completed', 'failed'].includes(paymentStatus)) {
       return res.status(400).json({
         success: false,
@@ -251,6 +395,110 @@ export const updatePaymentStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while updating payment status'
+    })
+  }
+}
+
+// Check verification status and resend email if needed
+export const checkVerificationStatus = async (req, res) => {
+  try {
+    const { registrationId, paymentId } = req.body
+
+    if (!registrationId && !paymentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration ID or Payment ID is required'
+      })
+    }
+
+    // Find registration by ID or payment ID
+    let registration
+    if (registrationId) {
+      registration = await Registration.findById(registrationId)
+    } else if (paymentId) {
+      registration = await Registration.findOne({ paymentId: paymentId })
+    }
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      })
+    }
+
+    console.log(`🔍 Checking verification status for registration ${registration._id}:`, {
+      paymentStatus: registration.paymentStatus,
+      ticketGenerated: registration.ticketGenerated,
+      emailSentAt: registration.emailSentAt
+    })
+
+    // If payment is verified but email not sent, try to send it
+    if (registration.paymentStatus === 'completed' && !registration.ticketGenerated) {
+      console.log('📧 Payment verified but email not sent. Attempting to send...')
+
+      try {
+        const emailResult = await sendConfirmationEmail(registration)
+
+        if (emailResult.success) {
+          registration.ticketNumber = emailResult.ticketNumber
+          registration.qrCode = emailResult.qrCode
+          registration.ticketGenerated = true
+          registration.emailSentAt = new Date()
+          await registration.save()
+
+          console.log('✅ Email sent successfully on retry')
+        } else {
+          console.log('❌ Email failed on retry')
+        }
+
+        return res.json({
+          success: true,
+          message: emailResult.success ? 'Email sent successfully' : 'Email failed but payment is verified',
+          data: {
+            id: registration._id,
+            paymentStatus: registration.paymentStatus,
+            ticketGenerated: registration.ticketGenerated,
+            emailSent: emailResult.success,
+            ticketNumber: registration.ticketNumber
+          }
+        })
+      } catch (emailError) {
+        console.error('Email retry error:', emailError)
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to send email, but payment is verified. Please contact support.',
+          data: {
+            id: registration._id,
+            paymentStatus: registration.paymentStatus,
+            paymentId: registration.paymentId
+          }
+        })
+      }
+    }
+
+    // Return current status
+    res.json({
+      success: true,
+      message: 'Verification status retrieved',
+      data: {
+        id: registration._id,
+        name: registration.name,
+        email: registration.email,
+        paymentStatus: registration.paymentStatus,
+        paymentId: registration.paymentId,
+        ticketGenerated: registration.ticketGenerated || false,
+        ticketNumber: registration.ticketNumber,
+        emailSent: !!registration.emailSentAt,
+        emailSentAt: registration.emailSentAt,
+        verificationTime: registration.verificationTime
+      }
+    })
+
+  } catch (error) {
+    console.error('Error checking verification status:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error checking verification status'
     })
   }
 }

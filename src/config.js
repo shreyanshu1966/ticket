@@ -8,6 +8,7 @@ export const config = {
 export const API_ENDPOINTS = {
   CREATE_ORDER: '/api/create-order',
   VERIFY_PAYMENT: '/api/verify-payment',
+  CHECK_VERIFICATION: '/api/check-verification',
   REGISTRATIONS: '/api/registrations',
   HEALTH: '/api/health',
   // Admin endpoints
