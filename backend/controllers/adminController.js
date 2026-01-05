@@ -1,5 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
+import { sendBulkNotification as sendBulkEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -221,7 +222,7 @@ export const exportRegistrations = async (req, res) => {
   }
 }
 
-// Send bulk notifications (placeholder for email functionality)
+// Send bulk notifications using nodemailer
 export const sendBulkNotification = async (req, res) => {
   try {
     const { subject, message, targetGroup } = req.body
@@ -230,27 +231,61 @@ export const sendBulkNotification = async (req, res) => {
     const filter = {}
     if (targetGroup === 'completed') filter.paymentStatus = 'completed'
     if (targetGroup === 'pending') filter.paymentStatus = 'pending'
+    if (targetGroup === 'failed') filter.paymentStatus = 'failed'
+    // 'all' means no filter
     
     const registrations = await Registration.find(filter).select('name email')
     
-    // In a real implementation, you would send emails here
-    // For now, just return the count of users who would receive the notification
+    if (registrations.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No recipients found for the selected target group',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup,
+          subject,
+          message
+        }
+      })
+    }
     
-    res.json({
-      success: true,
-      message: `Notification would be sent to ${registrations.length} users`,
-      data: {
-        recipientCount: registrations.length,
-        subject,
-        message,
-        targetGroup
-      }
-    })
+    // Send bulk notification using email service
+    const emailResult = await sendBulkEmail(registrations, subject, message)
+    
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: `Notification sent successfully! ${emailResult.sent} emails sent${emailResult.failed > 0 ? `, ${emailResult.failed} failed` : ''}`,
+        data: {
+          sent: emailResult.sent,
+          failed: emailResult.failed,
+          total: emailResult.total,
+          targetGroup,
+          subject,
+          message,
+          errors: emailResult.errors || []
+        }
+      })
+    } else {
+      res.status(500).json({
+        success: false,
+        message: `Failed to send notifications: ${emailResult.error}`,
+        data: {
+          sent: emailResult.sent,
+          failed: emailResult.failed,
+          total: emailResult.total,
+          targetGroup,
+          errors: emailResult.errors || []
+        }
+      })
+    }
   } catch (error) {
     console.error('Error sending bulk notification:', error)
     res.status(500).json({
       success: false,
-      message: 'Error sending bulk notification'
+      message: 'Error sending bulk notification: ' + error.message
     })
   }
 }
