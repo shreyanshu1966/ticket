@@ -73,7 +73,8 @@ const registrationSchema = new mongoose.Schema({
   },
   ticketNumber: {
     type: String,
-    unique: true
+    unique: true,
+    sparse: true  // Allow multiple null values, only enforce uniqueness for non-null values
   },
   qrCode: {
     type: String
