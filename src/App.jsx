@@ -52,9 +52,9 @@ function Navigation() {
           </Link>
           <Link
             to="/ticket-preview"
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${location.pathname === '/ticket-preview'
-                ? 'bg-blue-800'
-                : 'hover:bg-blue-500'
+            className={`px-4 py-1 rounded-lg font-medium transition-colors ${location.pathname === '/ticket-preview'
+              ? 'bg-blue-800'
+              : 'hover:bg-blue-500'
               }`}
           >
             🎟️ Ticket
