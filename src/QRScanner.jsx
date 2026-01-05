@@ -9,6 +9,111 @@ const QRScanner = () => {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [entryConfirmed, setEntryConfirmed] = useState(false)
+  
+  // Enhanced camera controls
+  const [torch, setTorch] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [cameraFacing, setCameraFacing] = useState('environment')
+  const [showControls, setShowControls] = useState(false)
+  const [scannerActive, setScannerActive] = useState(true)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  
+  // Camera capabilities tracking
+  const [cameraCapabilities, setCameraCapabilities] = useState({
+    torch: false,
+    zoom: false,
+    focus: false
+  })
+
+  // Effect to detect camera capabilities
+  useEffect(() => {
+    const detectCameraCapabilities = async () => {
+      try {
+        if (streamRef.current) {
+          const track = streamRef.current.getVideoTracks()[0]
+          if (track) {
+            const capabilities = track.getCapabilities()
+            setCameraCapabilities({
+              torch: 'torch' in capabilities,
+              zoom: 'zoom' in capabilities,
+              focus: 'focusMode' in capabilities
+            })
+            
+            // Apply initial settings for optimal scanning
+            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+              await track.applyConstraints({
+                focusMode: 'continuous'
+              })
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not detect camera capabilities:', err)
+      }
+    }
+
+    if (scannerActive) {
+      detectCameraCapabilities()
+    }
+  }, [scannerActive, streamRef.current])
+
+  // Enhanced camera controls
+  const toggleTorch = async () => {
+    try {
+      if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0]
+        if (track && cameraCapabilities.torch) {
+          await track.applyConstraints({
+            advanced: [{ torch: !torch }]
+          })
+          setTorch(!torch)
+        }
+      }
+    } catch (err) {
+      console.error('Torch toggle error:', err)
+      setError('Failed to toggle flashlight')
+    }
+  }
+
+  const handleZoomChange = async (newZoom) => {
+    try {
+      if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0]
+        if (track && cameraCapabilities.zoom) {
+          await track.applyConstraints({
+            zoom: newZoom
+          })
+          setZoom(newZoom)
+        }
+      }
+    } catch (err) {
+      console.error('Zoom change error:', err)
+      setError('Failed to adjust zoom')
+    }
+  }
+
+  const switchCamera = () => {
+    const newFacing = cameraFacing === 'environment' ? 'user' : 'environment'
+    setCameraFacing(newFacing)
+    setScannerActive(false)
+    setTimeout(() => setScannerActive(true), 100)
+  }
+
+  const focusCamera = async () => {
+    try {
+      if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0]
+        if (track && cameraCapabilities.focus) {
+          await track.applyConstraints({
+            focusMode: 'single-shot'
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Focus error:', err)
+    }
+  }
 
   const verifyTicket = async (qrData) => {
     setLoading(true)
@@ -16,13 +121,18 @@ const QRScanner = () => {
     setSuccessMessage('')
     
     try {
-      const response = await fetch(`${config.API_URL}/api/tickets/verify`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/tickets/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ qrData })
       })
+
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`)
+      }
 
       const result = await response.json()
 
@@ -35,7 +145,11 @@ const QRScanner = () => {
       }
     } catch (err) {
       console.error('Verification error:', err)
-      setError('Failed to verify ticket. Please try again.')
+      if (err.message.includes('Server error: 404')) {
+        setError('Verification service not available. Please check if the backend server is running.')
+      } else {
+        setError('Failed to verify ticket. Please try again.')
+      }
       setVerificationResult(null)
     } finally {
       setLoading(false)
@@ -49,7 +163,7 @@ const QRScanner = () => {
     setError('')
     
     try {
-      const response = await fetch(`${config.API_URL}/api/tickets/confirm-entry`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/tickets/confirm-entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -88,12 +202,41 @@ const QRScanner = () => {
       const scannedText = result[0].rawValue
       setScannedData(scannedText)
       verifyTicket(scannedText)
+      
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(100)
+      }
+      
+      // Audio feedback
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH0=').play()
+      } catch (e) {
+        // Audio feedback failed, continue
+      }
     }
   }
 
   const handleError = (error) => {
     console.error('QR Scanner error:', error)
-    setError('Camera error. Please check permissions.')
+    
+    // Provide specific error messages based on error type
+    if (error?.name === 'NotAllowedError') {
+      setError('Camera permission denied. Please allow camera access to scan QR codes.')
+    } else if (error?.name === 'NotFoundError') {
+      setError('No camera found. Please check if your device has a camera.')
+    } else if (error?.name === 'NotReadableError') {
+      setError('Camera is being used by another application. Please close other camera apps.')
+    } else if (error?.name === 'OverconstrainedError') {
+      setError('Camera settings not supported. Trying alternative settings...')
+      // Try with basic constraints
+      setTimeout(() => {
+        setScannerActive(false)
+        setTimeout(() => setScannerActive(true), 100)
+      }, 1000)
+    } else {
+      setError('Camera error occurred. Please try refreshing the page or check camera permissions.')
+    }
   }
 
   const resetScanner = () => {
@@ -102,6 +245,8 @@ const QRScanner = () => {
     setError('')
     setSuccessMessage('')
     setEntryConfirmed(false)
+    setShowControls(false)
+    setScannerActive(true)
   }
 
   return (
@@ -113,25 +258,128 @@ const QRScanner = () => {
           </h1>
 
           {/* Scanner */}
-          {!scannedData && (
+          {!scannedData && scannerActive && (
             <div className="mb-6">
-              <div className="aspect-square bg-black rounded-lg overflow-hidden">
+              <div className="relative aspect-square bg-black rounded-lg overflow-hidden">
                 <Scanner
                   onScan={handleScan}
                   onError={handleError}
+                  onResult={(result, error, codeReader) => {
+                    if (codeReader && codeReader.stream) {
+                      streamRef.current = codeReader.stream
+                    }
+                  }}
                   constraints={{
                     video: { 
-                      facingMode: 'environment',
-                      width: { ideal: 400 },
-                      height: { ideal: 400 }
+                      facingMode: cameraFacing,
+                      width: { ideal: 480 },
+                      height: { ideal: 480 },
+                      focusMode: 'continuous'
                     }
                   }}
                   formats={['qr_code']}
                   className="w-full h-full"
                 />
+                
+                {/* Scanner overlay with scanning area */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Corner markers */}
+                  <div className="absolute top-4 left-4 w-6 h-6 border-l-3 border-t-3 border-white"></div>
+                  <div className="absolute top-4 right-4 w-6 h-6 border-r-3 border-t-3 border-white"></div>
+                  <div className="absolute bottom-4 left-4 w-6 h-6 border-l-3 border-b-3 border-white"></div>
+                  <div className="absolute bottom-4 right-4 w-6 h-6 border-r-3 border-b-3 border-white"></div>
+                  
+                  {/* Scanning line animation */}
+                  <div className="absolute inset-x-4 top-1/2 h-0.5 bg-green-400 opacity-75 animate-pulse"></div>
+                </div>
+
+                {/* Camera Controls */}
+                <div className="absolute top-2 right-2 flex gap-2">
+                  {/* Settings Toggle */}
+                  <button
+                    onClick={() => setShowControls(!showControls)}
+                    className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Flash/Torch Toggle */}
+                {cameraCapabilities.torch && (
+                  <button
+                    onClick={toggleTorch}
+                    className={`absolute bottom-2 right-2 p-2 rounded-full ${
+                      torch ? 'bg-yellow-500 text-black' : 'bg-black bg-opacity-50 text-white'
+                    } hover:bg-opacity-70`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Focus Button */}
+                {cameraCapabilities.focus && (
+                  <button
+                    onClick={focusCamera}
+                    className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
+
+              {/* Advanced Camera Controls Panel */}
+              {showControls && (
+                <div className="mt-4 p-4 bg-gray-100 rounded-lg space-y-4">
+                  <h4 className="font-semibold text-gray-800">Camera Controls</h4>
+                  
+                  {/* Camera Switch */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Camera</span>
+                    <button
+                      onClick={switchCamera}
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                    >
+                      {cameraFacing === 'environment' ? '📷 Back' : '🤳 Front'}
+                    </button>
+                  </div>
+
+                  {/* Zoom Control */}
+                  {cameraCapabilities.zoom && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Zoom</span>
+                        <span className="text-sm text-gray-800">{zoom.toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="3"
+                        step="0.1"
+                        value={zoom}
+                        onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Scanner Stats */}
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>🔍 Auto-focus: {cameraCapabilities.focus ? 'Enabled' : 'Not available'}</div>
+                    <div>🔦 Flash: {cameraCapabilities.torch ? 'Available' : 'Not available'}</div>
+                    <div>🔍 Zoom: {cameraCapabilities.zoom ? 'Available' : 'Not available'}</div>
+                  </div>
+                </div>
+              )}
+
               <p className="text-sm text-gray-600 text-center mt-2">
-                Position QR code within the frame
+                🎯 Position QR code within the frame • Tap settings for controls
               </p>
             </div>
           )}
@@ -258,18 +506,35 @@ const QRScanner = () => {
                 Scan Another
               </button>
             )}
+            
+            {!scannedData && !scannerActive && (
+              <button
+                onClick={() => setScannerActive(true)}
+                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700"
+              >
+                🔄 Restart Scanner
+              </button>
+            )}
           </div>
 
-          {/* Instructions */}
+          {/* Enhanced Instructions */}
           <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <h4 className="font-semibold text-yellow-800 mb-2">📋 Instructions:</h4>
+            <h4 className="font-semibold text-yellow-800 mb-2">📋 Scanner Features & Instructions:</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Position QR code within camera frame</li>
-              <li>• Wait for automatic verification</li>
-              <li>• Check attendee details carefully</li>
-              <li>• Confirm entry only after ID verification</li>
+              <li>• <strong>Auto-Focus:</strong> Camera continuously focuses for sharp QR codes</li>
+              <li>• <strong>Flash Control:</strong> Tap the flash icon for better lighting</li>
+              <li>• <strong>Zoom:</strong> Use zoom slider in settings for distant codes</li>
+              <li>• <strong>Manual Focus:</strong> Tap focus button to refocus manually</li>
+              <li>• <strong>Camera Switch:</strong> Switch between front/back cameras</li>
+              <li>• Position QR code within the corner guides</li>
+              <li>• Wait for automatic scan and haptic/audio feedback</li>
               <li>• Each ticket can only be used once</li>
             </ul>
+            
+            <div className="mt-3 p-2 bg-yellow-100 rounded text-xs">
+              <strong>💡 Pro Tip:</strong> For best results, ensure good lighting and hold the device steady. 
+              The scanner will automatically detect and verify tickets in real-time.
+            </div>
           </div>
         </div>
       </div>

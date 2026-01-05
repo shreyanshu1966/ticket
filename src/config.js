@@ -9,7 +9,13 @@ export const API_ENDPOINTS = {
   CREATE_ORDER: '/api/create-order',
   VERIFY_PAYMENT: '/api/verify-payment',
   REGISTRATIONS: '/api/registrations',
-  HEALTH: '/api/health'
+  HEALTH: '/api/health',
+  // Admin endpoints
+  ADMIN_LOGIN: '/api/admin/login',
+  ADMIN_DASHBOARD_STATS: '/api/admin/dashboard/stats',
+  ADMIN_REGISTRATIONS: '/api/admin/registrations',
+  ADMIN_EXPORT: '/api/admin/export/registrations',
+  ADMIN_NOTIFICATIONS: '/api/admin/notifications/bulk'
 }
 
 // Helper function to build API URLs

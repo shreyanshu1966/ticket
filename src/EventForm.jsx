@@ -23,7 +23,7 @@ function EventForm() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
       
-      const response = await fetch(`${config.API_URL}/api/health`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/health`, {
         signal: controller.signal,
         method: 'GET'
       })
