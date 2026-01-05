@@ -82,3 +82,23 @@ export const adminLogin = (req, res) => {
     expiresIn: '24h'
   })
 }
+
+// Scanner authentication function
+export const scannerAuth = (req, res) => {
+  const { password } = req.body
+  
+  // Simple scanner password check (in production, use proper authentication)
+  const scannerPassword = process.env.SCANNER_PASSWORD || 'scanner123'
+  
+  if (password !== scannerPassword) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid scanner password'
+    })
+  }
+  
+  res.json({
+    success: true,
+    message: 'Scanner access granted'
+  })
+}

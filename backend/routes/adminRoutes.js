@@ -1,6 +1,6 @@
 import express from 'express'
 import { body } from 'express-validator'
-import { adminAuth, adminLogin } from '../middleware/adminAuth.js'
+import { adminAuth, adminLogin, scannerAuth } from '../middleware/adminAuth.js'
 import {
   getDashboardStats,
   getAllRegistrations,
@@ -17,6 +17,11 @@ router.post('/login', [
   body('username').notEmpty().withMessage('Username is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], adminLogin)
+
+// Scanner authentication route (public)
+router.post('/scanner/auth', [
+  body('password').notEmpty().withMessage('Password is required')
+], scannerAuth)
 
 // All routes below this middleware require admin authentication
 router.use(adminAuth)

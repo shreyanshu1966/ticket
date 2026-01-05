@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import config from './config.js'
+import ScannerAuth from './ScannerAuth'
 
 const QRScanner = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [scannedData, setScannedData] = useState(null)
   const [verificationResult, setVerificationResult] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -25,6 +27,14 @@ const QRScanner = () => {
     zoom: false,
     focus: false
   })
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('scannerAuth')
+    if (authStatus === 'authenticated') {
+      setIsAuthenticated(true)
+    }
+  }, [])
 
   // Effect to detect camera capabilities
   useEffect(() => {
@@ -249,13 +259,31 @@ const QRScanner = () => {
     setScannerActive(true)
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('scannerAuth')
+    setIsAuthenticated(false)
+  }
+
+  // Show authentication screen if not authenticated
+  if (!isAuthenticated) {
+    return <ScannerAuth onAuthenticate={setIsAuthenticated} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-            🎫 ACD 2025 Entry Scanner
-          </h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800">
+              🎫 ACD 2025 Entry Scanner
+            </h1>
+            <button
+              onClick={handleLogout}
+              className="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md"
+            >
+              Logout
+            </button>
+          </div>
 
           {/* Scanner */}
           {!scannedData && scannerActive && (
