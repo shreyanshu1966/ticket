@@ -68,3 +68,20 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #fff;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+/* Background Animation for Gradients */
+.background-animate {
+  background-size: 200%;
+  animation: gradient-flow 3s ease infinite;
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Perspective Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}

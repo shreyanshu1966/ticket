@@ -61,8 +61,8 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
+      
+        
         <Routes>
           <Route path="/" element={<EventForm />} />
           <Route path="/scanner" element={<QRScanner />} />
@@ -88,7 +88,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
-      </div>
+      
     </Router>
   )
   

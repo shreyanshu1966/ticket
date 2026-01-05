@@ -314,284 +314,198 @@ function EventForm() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Registration Successful!</h2>
-          <p className="text-gray-600 mb-4">Thank you for registering for our event. We'll send confirmation details to your email.</p>
-          
-          {registrationData && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-              <h3 className="font-semibold text-gray-800 mb-2">Registration Details:</h3>
-              <p className="text-sm text-gray-600"><span className="font-medium">Name:</span> {registrationData.name}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Email:</span> {registrationData.email}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">College:</span> {registrationData.college}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Year:</span> {registrationData.year}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Amount Paid:</span> ₹{registrationData.amount}</p>
-              <p className="text-sm text-gray-600"><span className="font-medium">Registration ID:</span> {registrationData.id}</p>
+      <div className="min-h-screen flex justify-center items-center bg-black px-4">
+        <div className="w-full max-w-lg bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+              </svg>
             </div>
-          )}
-          
-          <button 
-            onClick={() => {
-              setIsSubmitted(false)
-              resetForm()
-            }}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
-          >
-            Register Another
-          </button>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Registration Successful!
+            </h2>
+            <p className="text-gray-400 mb-6 text-sm">
+              Thank you for registering. Check your email for confirmation.
+            </p>
+            
+            {registrationData && (
+              <div className="bg-[#262626] rounded-lg p-4 mb-6 text-left border border-gray-600">
+                <h3 className="font-semibold text-purple-400 mb-3 text-sm">
+                  Registration Details
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Name</span>
+                    <span className="text-white">{registrationData.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Email</span>
+                    <span className="text-white">{registrationData.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">College</span>
+                    <span className="text-white">{registrationData.college}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Year</span>
+                    <span className="text-white">{registrationData.year}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Amount Paid</span>
+                    <span className="text-green-400 font-semibold">₹{registrationData.amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Registration ID</span>
+                    <span className="text-purple-400 font-mono text-xs">{registrationData.id}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <button 
+              onClick={() => {
+                setIsSubmitted(false)
+                resetForm()
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full text-base font-semibold"
+            >
+              Register Another Person
+            </button>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="py-8 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🎪 ACD 2025 Registration</h1>
-          <p className="text-gray-600">January 29-30, 2026 • Join us for an amazing experience!</p>
-          <p className="text-lg font-semibold text-blue-600 mt-2">Registration Fee: ₹199</p>
-        </div>
+    <div className="min-h-screen flex justify-center items-center bg-black px-4">
+      <div className="w-full max-w-lg">
+        <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
+          <div className="flex justify-center mb-4">
+            <img src="/ACES_LOGO-.png" alt="ACES Logo" className="h-16 w-auto" />
+          </div>
+          <h2 className="text-3xl font-bold text-center text-white mb-1">
+            Registration for
+          </h2>
+          <h3 className="text-xl font-semibold text-center text-purple-400 mb-6">
+            ACD 2026
+          </h3>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Network Status Indicator */}
           {networkStatus === 'offline' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <svg className="w-5 h-5 text-yellow-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <div>
-                  <h4 className="text-yellow-800 font-medium text-sm">Connection Issue</h4>
-                  <p className="text-yellow-700 text-sm mt-1">
-                    Having trouble connecting to our servers. Please check your internet connection.
-                  </p>
-                </div>
-              </div>
+            <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-3 mb-4">
+              <p className="text-yellow-300 text-sm">⚠️ Connection issue. Please check your internet.</p>
             </div>
           )}
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                  <h4 className="text-red-800 font-medium text-sm">Error</h4>
-                  <p className="text-red-700 text-sm mt-1">{error}</p>
-                </div>
-              </div>
+            <div className="bg-red-900/30 border border-red-600 rounded-lg p-3 mb-4">
+              <p className="text-red-300 text-sm">❌ {error}</p>
             </div>
           )}
           
           {/* Payment Status Display */}
           {paymentStatus && paymentStatus !== 'completed' && paymentStatus !== 'error' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent mr-3"></div>
-                <div>
-                  <p className="text-blue-800 text-sm font-medium">
-                    {paymentStatus === 'creating_order' && 'Creating payment order...'}
-                    {paymentStatus === 'opening_payment' && 'Opening payment gateway...'}
-                    {paymentStatus === 'verifying_payment' && 'Verifying payment...'}
-                    {paymentStatus === 'cancelled' && 'Payment cancelled'}
-                    {paymentStatus === 'failed' && 'Payment failed'}
-                  </p>
-                </div>
+            <div className="bg-blue-900/30 border border-blue-600 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>
+                <p className="text-blue-300 text-sm">
+                  {paymentStatus === 'creating_order' && 'Creating payment order...'}
+                  {paymentStatus === 'opening_payment' && 'Opening payment gateway...'}
+                  {paymentStatus === 'verifying_payment' && 'Verifying payment...'}
+                  {paymentStatus === 'cancelled' && 'Payment cancelled'}
+                  {paymentStatus === 'failed' && 'Payment failed'}
+                </p>
               </div>
             </div>
           )}
 
-          {/* Name Field */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name *
-            </label>
+          <div className="space-y-4">
             <input
               type="text"
-              id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Full Name"
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none ${
-                validationErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your full name"
+              className="w-full bg-[#262626] text-white px-4 py-3 rounded-lg border border-gray-600"
             />
             {validationErrors.name && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.name}</p>
+              <p className="text-red-400 text-xs mt-1">⚠ {validationErrors.name}</p>
             )}
-          </div>
 
-          {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address *
-            </label>
             <input
               type="email"
-              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Email"
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none ${
-                validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your email address"
+              className="w-full bg-[#262626] text-white px-4 py-3 rounded-lg border border-gray-600"
             />
             {validationErrors.email && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.email}</p>
+              <p className="text-red-400 text-xs mt-1">⚠ {validationErrors.email}</p>
             )}
-          </div>
 
-          {/* Phone Field */}
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
-            </label>
             <input
               type="tel"
-              id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
+              placeholder="Phone Number"
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none ${
-                validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your phone number"
+              className="w-full bg-[#262626] text-white px-4 py-3 rounded-lg border border-gray-600"
             />
             {validationErrors.phone && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.phone}</p>
+              <p className="text-red-400 text-xs mt-1">⚠ {validationErrors.phone}</p>
             )}
-          </div>
 
-          {/* College Field */}
-          <div>
-            <label htmlFor="college" className="block text-sm font-medium text-gray-700 mb-2">
-              College/University *
-            </label>
             <input
               type="text"
-              id="college"
               name="college"
               value={formData.college}
               onChange={handleChange}
+              placeholder="College / Organization"
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none ${
-                validationErrors.college ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your college/university name"
+              className="w-full bg-[#262626] text-white px-4 py-3 rounded-lg border border-gray-600"
             />
             {validationErrors.college && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.college}</p>
+              <p className="text-red-400 text-xs mt-1">⚠ {validationErrors.college}</p>
             )}
-          </div>
 
-          {/* Year Field */}
-          <div>
-            <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
-              Year/Level *
-            </label>
             <select
-              id="year"
               name="year"
               value={formData.year}
               onChange={handleChange}
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none bg-white ${
-                validationErrors.year ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
+              className="w-full bg-[#262626] text-white px-4 py-3 rounded-lg border border-gray-600"
             >
-              <option value="">Select your year/level</option>
-              <option value="1st Year">1st Year</option>
-              <option value="2nd Year">2nd Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="4th Year">4th Year</option>
-              <option value="Graduate">Graduate</option>
-              <option value="Post Graduate">Post Graduate</option>
+              <option value="">Select Year</option>
+              <option>1st Year</option>
+              <option>2nd Year</option>
+              <option>3rd Year</option>
+              <option>4th Year</option>
+              <option>Graduate</option>
+              <option>Post Graduate</option>
             </select>
             {validationErrors.year && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.year}</p>
+              <p className="text-red-400 text-xs mt-1">⚠ {validationErrors.year}</p>
             )}
           </div>
 
-          {/* Price Display */}
-          <div className="bg-gray-50 rounded-lg p-4 border">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-medium">Event Price:</span>
-              <span className="text-2xl font-bold text-green-600">₹199</span>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">One-time registration fee</p>
-          </div>
-
-          {/* Submit Button */}
           <button
-            type="submit"
             disabled={!isFormValid || isProcessing}
-            className={`w-full py-3 px-4 rounded-lg font-medium transition duration-200 flex items-center justify-center ${
-              isFormValid && !isProcessing
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg' 
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full text-lg"
           >
-            {isProcessing ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                {paymentStatus === 'creating_order' && 'Creating Order...'}
-                {paymentStatus === 'opening_payment' && 'Opening Payment...'}
-                {paymentStatus === 'verifying_payment' && 'Verifying Payment...'}
-                {!paymentStatus && 'Processing...'}
-              </>
-            ) : (
-              'Pay ₹199 & Register'
-            )}
+            {isProcessing ? 'Processing...' : 'Proceed to Payment ₹199'}
           </button>
-          
-          {/* Retry Button for Failed Payments */}
-          {(paymentStatus === 'failed' || paymentStatus === 'cancelled' || paymentStatus === 'verification_failed') && (
-            <button
-              type="button"
-              onClick={() => {
-                setPaymentStatus(null)
-                setError(null)
-                handleSubmit({ preventDefault: () => {} })
-              }}
-              className="w-full py-2 px-4 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition duration-200"
-            >
-              Retry Payment
-            </button>
-          )}
+
+          <p className="text-center text-sm text-gray-400 mt-4">
+            Secure payment powered by Razorpay
+          </p>
         </form>
-
-        {/* Troubleshooting Section */}
-        {(error && error.includes('Payment') || paymentStatus === 'failed') && (
-          <div className="bg-gray-50 rounded-lg p-4 mt-6">
-            <h4 className="text-gray-800 font-medium text-sm mb-2">💡 Payment Troubleshooting</h4>
-            <ul className="text-gray-600 text-xs space-y-1">
-              <li>• Ensure your internet connection is stable</li>
-              <li>• Try refreshing the page and attempting payment again</li>
-              <li>• Check if popup blockers are disabled</li>
-              <li>• Try using a different payment method (card/UPI/netbanking)</li>
-              <li>• Clear browser cache and cookies if issues persist</li>
-              <li>• Contact support if the problem continues</li>
-            </ul>
-          </div>
-        )}
-
-        <p className="text-xs text-gray-500 text-center mt-6">
-          By registering, you agree to our terms and conditions.
-        </p>
       </div>
     </div>
   )
