@@ -16,12 +16,43 @@ const PORT = process.env.PORT || 5000
 // app.use(helmet()) - Removed as per request
 
 // CORS configuration
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173'],
-  credentials: true,
-  optionsSuccessStatus: 200
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://acd.acesmitadt.com',
+  'https://api.acesmitadt.com'
+]
+
+// Add custom origins from environment variable
+if (process.env.CORS_ORIGIN) {
+  const customOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  allowedOrigins.push(...customOrigins)
 }
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true)
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      console.log(`⚠️ CORS blocked origin: ${origin}`)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+}
+
 app.use(cors(corsOptions))
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions))
 
 // Body parser middleware with size limits
 app.use(express.json({ limit: '10mb' }))
