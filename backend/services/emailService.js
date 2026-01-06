@@ -240,7 +240,7 @@ export const sendConfirmationEmail = async (registrationData) => {
         alreadySent: true
       }
     }
-    
+
     const fromAddress = 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
 
     // 1. Send Registration Success Email

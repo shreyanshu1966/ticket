@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Test</title>
+</head>
+<body>
+    <h1>Testing Razorpay Connectivity</h1>
+    <div id="status">Testing...</div>
+    
+    <script>
+        const testUrls = [
+            'https://checkout.razorpay.com/v1/checkout.js',
+            'https://api.razorpay.com/v1/checkout/public',
+            'https://checkout-static-next.razorpay.com/build/chunks/v2-entry.modern.js'
+        ];
+        
+        const statusDiv = document.getElementById('status');
+        let results = '<h2>Results:</h2>';
+        
+        Promise.all(testUrls.map(url => 
+            fetch(url, { mode: 'no-cors' })
+                .then(() => ({ url, status: '✅ Reachable' }))
+                .catch(err => ({ url, status: '❌ Failed: ' + err.message }))
+        )).then(responses => {
+            responses.forEach(r => {
+                results += `<p>${r.status}<br><small>${r.url}</small></p>`;
+            });
+            statusDiv.innerHTML = results;
+        });
+    </script>
+</body>
+</html>

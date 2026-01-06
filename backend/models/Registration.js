@@ -28,7 +28,7 @@ const registrationSchema = new mongoose.Schema({
   year: {
     type: String,
     required: [true, 'Year is required'],
-    enum: ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduate', 'Post Graduate']
+    enum: ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Postgraduate', 'PhD', 'Alumni', 'Faculty', 'Other']
   },
   registrationDate: {
     type: Date,
@@ -69,7 +69,7 @@ const registrationSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    default: 199
+    default: 19900 // Amount in paise (₹199 = 19900 paise)
   },
   ticketNumber: {
     type: String,
