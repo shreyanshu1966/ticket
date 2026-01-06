@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from 'uuid'
 // Generate unique ticket number
 export const generateTicketNumber = () => {
   const prefix = 'ACD2025'
-  const randomNumber = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-  return `${prefix}-${randomNumber}`
+  const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
+  const randomNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+  return `${prefix}-${timestamp}${randomNumber}`
 }
 
 // Generate QR code for ticket (Data URL format)

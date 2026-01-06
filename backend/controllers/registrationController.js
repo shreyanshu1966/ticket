@@ -233,6 +233,25 @@ export const verifyPayment = async (req, res) => {
     // Check if payment is already verified
     if (registration.paymentStatus === 'completed' && registration.paymentId === razorpay_payment_id) {
       console.log('⚠️ Payment already verified for this registration')
+      
+      // If ticket wasn't generated for some reason, try to generate it
+      if (!registration.ticketGenerated) {
+        console.log('📧 Payment verified but no ticket generated, attempting to send ticket...')
+        try {
+          const emailResult = await sendConfirmationEmail(registration)
+          if (emailResult.success) {
+            registration.ticketNumber = emailResult.ticketNumber
+            registration.qrCode = emailResult.qrCode
+            registration.ticketGenerated = true
+            registration.emailSentAt = new Date()
+            await registration.save()
+            console.log('✅ Ticket sent successfully on duplicate verification attempt')
+          }
+        } catch (emailError) {
+          console.error('❌ Email failed on duplicate verification attempt:', emailError)
+        }
+      }
+      
       return res.json({
         success: true,
         message: 'Payment already verified',
@@ -248,6 +267,20 @@ export const verifyPayment = async (req, res) => {
           ticketGenerated: registration.ticketGenerated || false,
           ticketNumber: registration.ticketNumber
         }
+      })
+    }
+    
+    // Check if this payment ID is already used by another registration
+    const existingPayment = await Registration.findOne({ 
+      paymentId: razorpay_payment_id,
+      _id: { $ne: registrationId }
+    })
+    
+    if (existingPayment) {
+      console.log('❌ Payment ID already used by another registration:', existingPayment._id)
+      return res.status(400).json({
+        success: false,
+        message: 'This payment has already been used for another registration'
       })
     }
 
@@ -283,37 +316,111 @@ export const verifyPayment = async (req, res) => {
       })
     }
 
-    // Step 3: Update registration with payment details (transaction safe)
-    registration.paymentStatus = 'completed'
-    registration.paymentId = razorpay_payment_id
-    registration.orderId = razorpay_order_id
-    registration.paymentDate = new Date()
-    registration.verificationTime = Date.now() - startTime
-
-    await registration.save()
+    // Step 3: Update registration with payment details (with atomic operation to prevent race conditions)
+    console.log('📝 Updating registration with payment details...')
+    
+    // Use findByIdAndUpdate with specific conditions to ensure atomicity
+    const updatedRegistration = await Registration.findOneAndUpdate(
+      { 
+        _id: registrationId,
+        paymentStatus: { $ne: 'completed' }, // Only update if not already completed
+        $or: [
+          { paymentId: { $exists: false } },
+          { paymentId: null },
+          { paymentId: razorpay_payment_id }
+        ]
+      },
+      {
+        paymentStatus: 'completed',
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id,
+        paymentDate: new Date(),
+        verificationTime: Date.now() - startTime
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    )
+    
+    if (!updatedRegistration) {
+      console.log('⚠️ Registration was already processed by another request')
+      // Try to find the registration to return its current state
+      const currentRegistration = await Registration.findById(registrationId)
+      if (currentRegistration && currentRegistration.paymentStatus === 'completed') {
+        return res.json({
+          success: true,
+          message: 'Payment already processed',
+          data: {
+            id: currentRegistration._id,
+            name: currentRegistration.name,
+            email: currentRegistration.email,
+            phone: currentRegistration.phone,
+            college: currentRegistration.college,
+            year: currentRegistration.year,
+            paymentStatus: currentRegistration.paymentStatus,
+            amount: currentRegistration.amount,
+            ticketGenerated: currentRegistration.ticketGenerated || false,
+            ticketNumber: currentRegistration.ticketNumber
+          }
+        })
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: 'Payment verification conflict. Please try again.'
+        })
+      }
+    }
+    
+    registration = updatedRegistration
     console.log('✅ Registration updated with payment details')
 
-    // Step 4: ONLY send email if verification is completely successful
+    // Step 4: Send email only if verification is completely successful and email hasn't been sent
     let emailResult = { success: false }
-    try {
-      console.log('📧 Starting email sending process...')
-      emailResult = await sendConfirmationEmail(registration)
+    
+    // Only send email if ticket hasn't been generated yet
+    if (!registration.ticketGenerated) {
+      try {
+        console.log('📧 Starting email sending process...')
+        emailResult = await sendConfirmationEmail(registration)
 
-      if (emailResult.success) {
-        // Update registration with ticket information
-        registration.ticketNumber = emailResult.ticketNumber
-        registration.qrCode = emailResult.qrCode
-        registration.ticketGenerated = true
-        registration.emailSentAt = new Date()
-        await registration.save()
-
-        console.log('✅ Ticket generated and email sent successfully')
-      } else {
-        console.log('⚠️ Email failed but payment verified - user can contact support')
+        if (emailResult.success && !emailResult.alreadySent) {
+          // Use atomic update to prevent race condition in ticket generation
+          const ticketUpdate = await Registration.findOneAndUpdate(
+            {
+              _id: registration._id,
+              ticketGenerated: { $ne: true } // Only update if ticket not already generated
+            },
+            {
+              ticketNumber: emailResult.ticketNumber,
+              qrCode: emailResult.qrCode,
+              ticketGenerated: true,
+              emailSentAt: new Date()
+            },
+            {
+              new: true,
+              runValidators: true
+            }
+          )
+          
+          if (ticketUpdate) {
+            registration = ticketUpdate
+            console.log('✅ Ticket generated and email sent successfully')
+          } else {
+            console.log('⚠️ Ticket was already generated by another process')
+          }
+        } else if (emailResult.alreadySent) {
+          console.log('ℹ️ Email was already sent previously')
+        } else {
+          console.log('⚠️ Email failed but payment verified - user can contact support')
+        }
+      } catch (emailError) {
+        console.error('❌ Email sending error:', emailError)
+        // Don't fail the verification if email fails
       }
-    } catch (emailError) {
-      console.error('❌ Email sending error:', emailError)
-      // Don't fail the verification if email fails
+    } else {
+      console.log('ℹ️ Ticket already generated for this registration')
+      emailResult.success = true // Consider it successful since ticket exists
     }
 
     const verificationTime = Date.now() - startTime
@@ -439,26 +546,45 @@ export const checkVerificationStatus = async (req, res) => {
       try {
         const emailResult = await sendConfirmationEmail(registration)
 
-        if (emailResult.success) {
-          registration.ticketNumber = emailResult.ticketNumber
-          registration.qrCode = emailResult.qrCode
-          registration.ticketGenerated = true
-          registration.emailSentAt = new Date()
-          await registration.save()
-
-          console.log('✅ Email sent successfully on retry')
+        if (emailResult.success && !emailResult.alreadySent) {
+          // Use atomic update to prevent race condition
+          const ticketUpdate = await Registration.findOneAndUpdate(
+            {
+              _id: registration._id,
+              ticketGenerated: { $ne: true }
+            },
+            {
+              ticketNumber: emailResult.ticketNumber,
+              qrCode: emailResult.qrCode,
+              ticketGenerated: true,
+              emailSentAt: new Date()
+            },
+            {
+              new: true,
+              runValidators: true
+            }
+          )
+          
+          if (ticketUpdate) {
+            registration = ticketUpdate
+            console.log('✅ Email sent successfully on retry')
+          } else {
+            console.log('ℹ️ Ticket was already generated by another process')
+          }
+        } else if (emailResult.alreadySent) {
+          console.log('ℹ️ Email was already sent')
         } else {
           console.log('❌ Email failed on retry')
         }
 
         return res.json({
           success: true,
-          message: emailResult.success ? 'Email sent successfully' : 'Email failed but payment is verified',
+          message: emailResult.success || emailResult.alreadySent ? 'Email sent successfully' : 'Email failed but payment is verified',
           data: {
             id: registration._id,
             paymentStatus: registration.paymentStatus,
             ticketGenerated: registration.ticketGenerated,
-            emailSent: emailResult.success,
+            emailSent: emailResult.success || emailResult.alreadySent,
             ticketNumber: registration.ticketNumber
           }
         })

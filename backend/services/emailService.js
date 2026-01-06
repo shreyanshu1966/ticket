@@ -229,9 +229,22 @@ const sendEmailWithRetry = async (mailOptions, maxRetries = 3) => {
 // Function to send confirmation emails
 export const sendConfirmationEmail = async (registrationData) => {
   try {
+    // Check if emails were already sent for this registration
+    if (registrationData.ticketGenerated && registrationData.emailSentAt) {
+      console.log('⚠️ Emails already sent for registration:', registrationData._id)
+      return {
+        success: true,
+        message: 'Emails already sent',
+        ticketNumber: registrationData.ticketNumber,
+        qrCode: registrationData.qrCode,
+        alreadySent: true
+      }
+    }
+    
     const fromAddress = 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
 
     // 1. Send Registration Success Email
+    console.log('📧 Sending registration confirmation email...')
     const regEmail = generateRegistrationSuccessEmail(registrationData)
     const regInfo = await sendEmailWithRetry({
       from: fromAddress,
@@ -246,6 +259,7 @@ export const sendConfirmationEmail = async (registrationData) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // 2. Send Ticket Email
+    console.log('🎫 Sending ticket email...')
     const ticketEmail = await generateTicketEmail(registrationData)
     const ticketInfo = await sendEmailWithRetry({
       from: fromAddress,

@@ -18,7 +18,20 @@ router.use('/api/tickets', ticketRoutes)
 // Admin routes
 router.use('/api/admin', adminRoutes)
 
-// Legacy endpoints for backward compatibility
-router.use('/api', registrationRoutes)
+// Legacy endpoints for backward compatibility (only specific endpoints to avoid duplication)
+router.post('/api/create-order', (req, res, next) => {
+  req.url = '/create-order'
+  registrationRoutes(req, res, next)
+})
+
+router.post('/api/verify-payment', (req, res, next) => {
+  req.url = '/verify-payment'
+  registrationRoutes(req, res, next)
+})
+
+router.post('/api/check-verification', (req, res, next) => {
+  req.url = '/check-verification'
+  registrationRoutes(req, res, next)
+})
 
 export default router
