@@ -48,7 +48,7 @@ const Ticket = ({ data }) => {
                             <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
                                 {ticketType}
                             </h3>
-                            <p className="text-gray-400 text-sm">₹{amount || 199} Paid</p>
+                            <p className="text-gray-400 text-sm">₹{(amount / 100) || 199} Paid</p>
                         </div>
 
                         <div>

@@ -7,7 +7,7 @@ backend/
 ├── config/                     # Configuration files
 │   ├── database.js             # MongoDB connection
 │   ├── nodemailer.js           # Email configuration
-│   └── razorpay.js             # Payment gateway config
+
 ├── controllers/                # Business logic
 │   ├── registrationController.js
 │   └── systemController.js
@@ -49,7 +49,7 @@ backend/
 ### **Config** (`/config`)
 - **database.js**: MongoDB connection setup
 - **nodemailer.js**: Email service configuration
-- **razorpay.js**: Payment gateway setup
+
 - Centralizes configuration and external service connections
 
 ### **Middleware** (`/middleware`)

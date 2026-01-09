@@ -30,7 +30,7 @@ The application uses environment variables for configuration. These are loaded a
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:5000` |
-| `VITE_RAZORPAY_KEY_ID` | Razorpay Key ID for payments | `rzp_test_RsMk6Cq17QXPbk` |
+
 
 ### Important Notes
 
@@ -52,7 +52,7 @@ The application uses a centralized config file (`src/config.js`) that reads envi
 import { config, buildApiUrl, API_ENDPOINTS } from './config.js'
 
 // Use config values
-const apiKey = config.RAZORPAY_KEY_ID
+const apiUrl = config.API_URL
 
 // Build API URLs
 const createOrderUrl = buildApiUrl(API_ENDPOINTS.CREATE_ORDER)

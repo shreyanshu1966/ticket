@@ -11,7 +11,7 @@ const QRScanner = () => {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [entryConfirmed, setEntryConfirmed] = useState(false)
-  
+
   // Enhanced camera controls
   const [torch, setTorch] = useState(false)
   const [zoom, setZoom] = useState(1)
@@ -20,7 +20,7 @@ const QRScanner = () => {
   const [scannerActive, setScannerActive] = useState(true)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
-  
+
   // Camera capabilities tracking
   const [cameraCapabilities, setCameraCapabilities] = useState({
     torch: false,
@@ -49,7 +49,7 @@ const QRScanner = () => {
               zoom: 'zoom' in capabilities,
               focus: 'focusMode' in capabilities
             })
-            
+
             // Apply initial settings for optimal scanning
             if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
               await track.applyConstraints({
@@ -129,7 +129,7 @@ const QRScanner = () => {
     setLoading(true)
     setError('')
     setSuccessMessage('')
-    
+
     try {
       const response = await fetch(`${config.API_BASE_URL}/api/tickets/verify`, {
         method: 'POST',
@@ -171,14 +171,14 @@ const QRScanner = () => {
 
     setLoading(true)
     setError('')
-    
+
     try {
       const response = await fetch(`${config.API_BASE_URL}/api/tickets/confirm-entry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           registrationId: verificationResult.registrationId,
           ticketNumber: verificationResult.ticketNumber
         })
@@ -212,12 +212,12 @@ const QRScanner = () => {
       const scannedText = result[0].rawValue
       setScannedData(scannedText)
       verifyTicket(scannedText)
-      
+
       // Haptic feedback if available
       if (navigator.vibrate) {
         navigator.vibrate(100)
       }
-      
+
       // Audio feedback
       try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH8N2QQAoUXrTp66hVFApGm+DyvmwhBytqwenHfiwFJHfH0=').play()
@@ -229,7 +229,7 @@ const QRScanner = () => {
 
   const handleError = (error) => {
     console.error('QR Scanner error:', error)
-    
+
     // Provide specific error messages based on error type
     if (error?.name === 'NotAllowedError') {
       setError('Camera permission denied. Please allow camera access to scan QR codes.')
@@ -298,7 +298,7 @@ const QRScanner = () => {
                     }
                   }}
                   constraints={{
-                    video: { 
+                    video: {
                       facingMode: cameraFacing,
                       width: { ideal: 480 },
                       height: { ideal: 480 },
@@ -308,7 +308,7 @@ const QRScanner = () => {
                   formats={['qr_code']}
                   className="w-full h-full"
                 />
-                
+
                 {/* Scanner overlay with scanning area */}
                 <div className="absolute inset-0 pointer-events-none">
                   {/* Corner markers */}
@@ -316,7 +316,7 @@ const QRScanner = () => {
                   <div className="absolute top-4 right-4 w-6 h-6 border-r-3 border-t-3 border-white"></div>
                   <div className="absolute bottom-4 left-4 w-6 h-6 border-l-3 border-b-3 border-white"></div>
                   <div className="absolute bottom-4 right-4 w-6 h-6 border-r-3 border-b-3 border-white"></div>
-                  
+
                   {/* Scanning line animation */}
                   <div className="absolute inset-x-4 top-1/2 h-0.5 bg-green-400 opacity-75 animate-pulse"></div>
                 </div>
@@ -339,9 +339,8 @@ const QRScanner = () => {
                 {cameraCapabilities.torch && (
                   <button
                     onClick={toggleTorch}
-                    className={`absolute bottom-2 right-2 p-2 rounded-full ${
-                      torch ? 'bg-yellow-500 text-black' : 'bg-black bg-opacity-50 text-white'
-                    } hover:bg-opacity-70`}
+                    className={`absolute bottom-2 right-2 p-2 rounded-full ${torch ? 'bg-yellow-500 text-black' : 'bg-black bg-opacity-50 text-white'
+                      } hover:bg-opacity-70`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -366,7 +365,7 @@ const QRScanner = () => {
               {showControls && (
                 <div className="mt-4 p-4 bg-gray-100 rounded-lg space-y-4">
                   <h4 className="font-semibold text-gray-800">Camera Controls</h4>
-                  
+
                   {/* Camera Switch */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Camera</span>
@@ -476,15 +475,14 @@ const QRScanner = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-600 font-medium">Amount:</span>
-                  <span className="text-blue-800">₹{verificationResult.amount}</span>
+                  <span className="text-blue-800">₹{verificationResult.amount / 100}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-600 font-medium">Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    verificationResult.hasEntered 
-                      ? 'bg-red-100 text-red-800' 
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${verificationResult.hasEntered
+                      ? 'bg-red-100 text-red-800'
                       : 'bg-green-100 text-green-800'
-                  }`}>
+                    }`}>
                     {verificationResult.hasEntered ? 'Already Entered' : 'Valid for Entry'}
                   </span>
                 </div>
@@ -534,7 +532,7 @@ const QRScanner = () => {
                 Scan Another
               </button>
             )}
-            
+
             {!scannedData && !scannerActive && (
               <button
                 onClick={() => setScannerActive(true)}
@@ -558,9 +556,9 @@ const QRScanner = () => {
               <li>• Wait for automatic scan and haptic/audio feedback</li>
               <li>• Each ticket can only be used once</li>
             </ul>
-            
+
             <div className="mt-3 p-2 bg-yellow-100 rounded text-xs">
-              <strong>💡 Pro Tip:</strong> For best results, ensure good lighting and hold the device steady. 
+              <strong>💡 Pro Tip:</strong> For best results, ensure good lighting and hold the device steady.
               The scanner will automatically detect and verify tickets in real-time.
             </div>
           </div>

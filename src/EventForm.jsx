@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { config, buildApiUrl, API_ENDPOINTS } from './config.js'
+import PaymentForm from './PaymentForm.jsx'
+import PaymentSuccess from './PaymentSuccess.jsx'
 
 function EventForm() {
   const [formData, setFormData] = useState({
@@ -10,24 +12,12 @@ function EventForm() {
     year: ''
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const [paymentComplete, setPaymentComplete] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState(null)
   const [validationErrors, setValidationErrors] = useState({})
-  const [paymentStatus, setPaymentStatus] = useState(null)
   const [registrationData, setRegistrationData] = useState(null)
-  const [razorpayReady, setRazorpayReady] = useState(false)
-
-  // Check if Razorpay is loaded
-  useEffect(() => {
-    window.razorpayReady
-      .then(() => {
-        setRazorpayReady(true)
-      })
-      .catch((error) => {
-        console.error('Razorpay failed to load:', error)
-        setError('Payment system failed to load. Please refresh the page.')
-      })
-  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -82,8 +72,10 @@ function EventForm() {
     })
     setValidationErrors({})
     setError(null)
-    setPaymentStatus(null)
     setRegistrationData(null)
+    setIsSubmitted(false)
+    setShowPayment(false)
+    setPaymentComplete(false)
   }
 
   const handleSubmit = async (e) => {
@@ -98,25 +90,21 @@ function EventForm() {
       return
     }
 
-    // Check if Razorpay is ready
-    if (!razorpayReady) {
-      setError('Payment system is still loading. Please wait a moment and try again.')
-      return
-    }
-
     setIsProcessing(true)
-    setPaymentStatus('creating_order')
 
     try {
-      console.log('Creating order...', formData)
+      console.log('Submitting registration...', formData)
 
-      // Create order
-      const response = await fetch(buildApiUrl(API_ENDPOINTS.CREATE_ORDER), {
+      // Create registration (pending payment)
+      const response = await fetch(buildApiUrl('/api/registrations/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          paymentStatus: 'pending'
+        })
       })
 
       const result = await response.json()
@@ -130,104 +118,16 @@ function EventForm() {
           })
           setValidationErrors(serverErrors)
         }
-        throw new Error(result.message || 'Failed to create order')
+        throw new Error(result.message || 'Failed to create registration')
       }
 
-      setPaymentStatus('opening_payment')
-
-      console.log('✅ Order created successfully:', { orderId: result.orderId, amount: result.amount })
-
-      // Initialize Razorpay payment
-      const options = {
-        key: config.RAZORPAY_KEY_ID,
-        amount: result.amount,
-        currency: result.currency,
-        name: 'Event Registration',
-        description: 'Registration for our amazing event',
-        order_id: result.orderId,
-        handler: async function (response) {
-          setPaymentStatus('verifying_payment')
-
-          try {
-            console.log('Verifying payment...', response.razorpay_payment_id)
-
-            const verifyResponse = await fetch(buildApiUrl(API_ENDPOINTS.VERIFY_PAYMENT), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                registrationId: result.registrationId
-              })
-            })
-
-            const verifyResult = await verifyResponse.json()
-
-            if (verifyResult.success) {
-              console.log('✅ Payment verified successfully:', verifyResult.data)
-              setRegistrationData(verifyResult.data)
-              setPaymentStatus('completed')
-              setIsSubmitted(true)
-
-              // Show success message
-              setTimeout(() => {
-                alert('🎉 Registration successful! Check your email for the ticket.')
-              }, 500)
-            } else {
-              throw new Error(verifyResult.message || 'Payment verification failed')
-            }
-          } catch (verificationError) {
-            console.error('Payment verification error:', verificationError)
-            setPaymentStatus('verification_failed')
-            setError(`Payment verification failed. Please contact support with payment ID: ${response.razorpay_payment_id}`)
-          } finally {
-            setIsProcessing(false)
-          }
-        },
-        prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: formData.phone
-        },
-        notes: {
-          college: formData.college,
-          year: formData.year
-        },
-        theme: {
-          color: '#2563eb'
-        },
-        modal: {
-          ondismiss: function () {
-            console.log('Payment cancelled by user')
-            setPaymentStatus('cancelled')
-            setIsProcessing(false)
-            setError('Payment was cancelled. You can try again to complete your registration.')
-          },
-          escape: true,
-          backdropclose: false
-        }
-      }
-
-      const rzp = new window.Razorpay(options)
-
-      // Handle payment failures
-      rzp.on('payment.failed', function (response) {
-        console.error('Payment failed:', response.error)
-        setPaymentStatus('failed')
-        setIsProcessing(false)
-        setError(`Payment failed: ${response.error.description || 'Please try again'}`)
-      })
-
-      rzp.open()
-      console.log('✅ Payment modal opened successfully')
+      console.log('✅ Registration created successfully:', result.data)
+      setRegistrationData(result.data)
+      setShowPayment(true)
 
     } catch (error) {
       console.error('Registration error:', error)
       setIsProcessing(false)
-      setPaymentStatus('error')
 
       let errorMessage = error.message || 'An unexpected error occurred'
 
@@ -238,7 +138,15 @@ function EventForm() {
       }
 
       setError(errorMessage)
+    } finally {
+      setIsProcessing(false)
     }
+  }
+
+  const handlePaymentComplete = (updatedData) => {
+    setRegistrationData(updatedData)
+    setPaymentComplete(true)
+    setShowPayment(false)
   }
 
   const isFormValid = formData.name.trim() &&
@@ -247,6 +155,21 @@ function EventForm() {
     formData.college.trim() &&
     formData.year.trim() &&
     Object.keys(validationErrors).length === 0
+
+  // Handle different states of the form
+  if (paymentComplete) {
+    return <PaymentSuccess 
+      registrationData={registrationData} 
+      onStartOver={resetForm} 
+    />
+  }
+
+  if (showPayment) {
+    return <PaymentForm 
+      registrationData={registrationData} 
+      onPaymentComplete={handlePaymentComplete} 
+    />
+  }
 
   if (isSubmitted) {
     return (
@@ -287,12 +210,6 @@ function EventForm() {
                     <span className="text-gray-400">Year</span>
                     <span className="text-white">{registrationData.year}</span>
                   </div>
-                  {registrationData.amount && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Amount Paid</span>
-                      <span className="text-green-400 font-semibold">₹{(registrationData.amount / 100).toFixed(0)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-400">Registration ID</span>
                     <span className="text-purple-400 font-mono text-xs">{registrationData.id}</span>
@@ -322,41 +239,8 @@ function EventForm() {
         <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-white mb-2">Event Registration</h1>
-            <p className="text-gray-400 text-sm">Join our amazing event - Only ₹199</p>
+            <p className="text-gray-400 text-sm">Join our amazing event</p>
           </div>
-
-          {/* Progress indicator */}
-          {paymentStatus && (
-            <div className="mb-6 bg-[#262626] rounded-lg p-4 border border-gray-600">
-              <div className="text-center">
-                <h3 className="text-purple-400 font-semibold mb-2 text-sm">Registration Progress</h3>
-                <div className="text-white text-sm">
-                  {paymentStatus === 'creating_order' && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-400 border-t-transparent"></div>
-                      <span>Creating order...</span>
-                    </div>
-                  )}
-                  {paymentStatus === 'opening_payment' && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>
-                      <span>Opening payment window...</span>
-                    </div>
-                  )}
-                  {paymentStatus === 'verifying_payment' && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
-                      <span>Verifying payment...</span>
-                    </div>
-                  )}
-                  {paymentStatus === 'cancelled' && <span className="text-yellow-400">Payment cancelled</span>}
-                  {paymentStatus === 'failed' && <span className="text-red-400">Payment failed</span>}
-                  {paymentStatus === 'verification_failed' && <span className="text-red-400">Payment verification failed</span>}
-                  {paymentStatus === 'error' && <span className="text-red-400">Registration error</span>}
-                </div>
-              </div>
-            </div>
-          )}
 
           {error && (
             <div className="mb-6 bg-red-950 border border-red-800 rounded-lg p-4">
@@ -484,8 +368,8 @@ function EventForm() {
 
           <button
             type="submit"
-            disabled={isProcessing || !isFormValid || !razorpayReady}
-            className={`w-full mt-6 py-3 rounded-full text-base font-semibold transition-all duration-300 ${isProcessing || !isFormValid || !razorpayReady
+            disabled={isProcessing || !isFormValid}
+            className={`w-full mt-6 py-3 rounded-full text-base font-semibold transition-all duration-300 ${isProcessing || !isFormValid
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
               }`}
@@ -495,15 +379,13 @@ function EventForm() {
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                 <span>Processing...</span>
               </div>
-            ) : !razorpayReady ? (
-              'Loading Payment System...'
             ) : (
-              'Register Now - Pay ₹199'
+              'Continue to Payment - ₹199'
             )}
           </button>
 
           <p className="text-xs text-gray-500 text-center mt-4">
-            Secure payment powered by Razorpay. Your data is safe with us.
+            Your registration data is safe and secure with us.
           </p>
         </form>
       </div>

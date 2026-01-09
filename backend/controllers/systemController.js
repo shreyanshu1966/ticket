@@ -1,6 +1,5 @@
 import { sendTestEmail } from '../services/emailService.js'
 import { validationResult } from 'express-validator'
-import razorpay from '../config/razorpay.js'
 
 // Health check with enhanced connectivity tests
 export const healthCheck = async (req, res) => {
@@ -10,25 +9,11 @@ export const healthCheck = async (req, res) => {
     timestamp: new Date().toISOString(),
     services: {
       database: 'OK',
-      email: !!process.env.EMAIL_USER,
-      razorpay: 'OK'
+      email: !!process.env.EMAIL_USER
     }
   }
 
   try {
-    // Test Razorpay connectivity by fetching a dummy order (will fail but shows API connectivity)
-    try {
-      await razorpay.orders.fetch('dummy_order_id')
-    } catch (razorpayError) {
-      // Expected error for dummy order, but if we get network error, mark as down
-      if (razorpayError.message.includes('ENOTFOUND') || 
-          razorpayError.message.includes('ECONNREFUSED') || 
-          razorpayError.message.includes('timeout')) {
-        healthStatus.services.razorpay = 'DOWN'
-        healthStatus.status = 'DEGRADED'
-      }
-    }
-
     res.json(healthStatus)
   } catch (error) {
     console.error('Health check error:', error)

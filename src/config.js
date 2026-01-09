@@ -1,14 +1,19 @@
 // API Configuration
 export const config = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
-  RAZORPAY_KEY_ID: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RsMk6Cq17QXPbk',
+  API_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  API_BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000'
+}
+
+// Payment Configuration
+export const PAYMENT_CONFIG = {
+  UPI_ID: 'iganarase@okicici', // UPI ID matching the QR code
+  AMOUNT: 199, // Amount in rupees
+  EVENT_NAME: 'Event Registration'
 }
 
 // API endpoints
 export const API_ENDPOINTS = {
-  CREATE_ORDER: '/api/create-order',
-  VERIFY_PAYMENT: '/api/verify-payment',
-  CHECK_VERIFICATION: '/api/check-verification',
+  REGISTER: '/api/registrations',
   REGISTRATIONS: '/api/registrations',
   HEALTH: '/api/health',
   // Admin endpoints

@@ -1,36 +1,33 @@
 import express from 'express'
-import {
-  getAllRegistrations,
+import { 
+  getAllRegistrations, 
   getRegistrationById,
-  createOrder,
+  registerDirect,
+  createRegistration,
+  submitPayment,
   verifyPayment,
-  updatePaymentStatus,
-  checkVerificationStatus,
-  registerDirect
+  updatePaymentStatus
 } from '../controllers/registrationController.js'
 import { validateRegistration } from '../middleware/validation.js'
 
 const router = express.Router()
 
-// Get all registrations
+// Get all registrations (with optional pagination)
 router.get('/', getAllRegistrations)
 
 // Get registration by ID
 router.get('/:id', getRegistrationById)
 
-// Create Razorpay order
-router.post('/create-order', validateRegistration, createOrder)
-
-// Verify payment
-router.post('/verify-payment', verifyPayment)
-
-// Check verification status and resend email if needed
-router.post('/check-verification', checkVerificationStatus)
-
-// Update payment status
-router.patch('/:id/payment', updatePaymentStatus)
-
-// Legacy register endpoint (redirect to payment flow)
+// Direct registration endpoint (legacy)
 router.post('/register', validateRegistration, registerDirect)
+router.post('/', validateRegistration, registerDirect)
+
+// New UPI payment flow
+router.post('/create', validateRegistration, createRegistration)
+router.post('/submit-payment', submitPayment)
+router.patch('/:id/verify', verifyPayment)
+
+// Update payment status (admin only)
+router.patch('/:id/payment-status', updatePaymentStatus)
 
 export default router

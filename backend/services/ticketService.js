@@ -141,7 +141,7 @@ export const generateTicketHTML = (registrationData) => {
                   <td width="50%" style="padding-bottom: 16px; vertical-align: top; padding-left: 10px;">
                     <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Ticket Type</p>
                     <h3 style="margin: 0; font-size: 15px; font-weight: bold; color: #c084fc;">${ticketType}</h3>
-                    <p style="margin: 0; color: #9ca3af; font-size: 11px;">₹${amount || '0'} Paid</p>
+                    <p style="margin: 0; color: #9ca3af; font-size: 11px;">₹${(amount / 100) || '0'} Paid</p>
                   </td>
                 </tr>
                 <tr>

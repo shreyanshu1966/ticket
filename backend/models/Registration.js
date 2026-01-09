@@ -36,14 +36,39 @@ const registrationSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'completed', 'failed', 'verification_failed'],
+    enum: ['pending', 'paid_awaiting_verification', 'verified', 'completed', 'failed', 'verification_failed'],
     default: 'pending'
   },
-  razorpayOrderId: {
-    type: String
+  paymentMethod: {
+    type: String,
+    enum: ['upi', 'razorpay', 'direct'],
+    default: 'upi'
   },
-  razorpayPaymentId: {
-    type: String
+  upiTransactionId: {
+    type: String,
+    trim: true
+  },
+  paymentScreenshot: {
+    type: String, // Base64 encoded image or file path
+    trim: true
+  },
+  paymentSubmittedAt: {
+    type: Date
+  },
+  adminVerifiedAt: {
+    type: Date
+  },
+  adminVerifiedBy: {
+    type: String,
+    trim: true
+  },
+  paymentNotes: {
+    type: String,
+    trim: true
+  },
+  paymentRejectionReason: {
+    type: String,
+    trim: true
   },
   paymentId: {
     type: String

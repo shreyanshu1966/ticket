@@ -193,7 +193,7 @@ export const exportRegistrations = async (req, res) => {
     
     const registrations = await Registration.find(filter)
       .sort({ createdAt: -1 })
-      .select('name email phone college year paymentStatus amount razorpayPaymentId createdAt')
+      .select('name email phone college year paymentStatus createdAt')
     
     // Convert to CSV format data
     const csvData = registrations.map(reg => ({
@@ -204,7 +204,7 @@ export const exportRegistrations = async (req, res) => {
       Year: reg.year,
       'Payment Status': reg.paymentStatus,
       Amount: reg.amount,
-      'Payment ID': reg.razorpayPaymentId || 'N/A',
+      'Payment Status': reg.paymentStatus || 'N/A',
       'Registration Date': reg.createdAt.toLocaleDateString()
     }))
     

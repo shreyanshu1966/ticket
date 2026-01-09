@@ -42,7 +42,7 @@ A05C0000:error:0A00010B:SSL routines:tls_validate_record_header:wrong version nu
 ## How It Works Now
 
 ### Email Flow (Simplified):
-1. User completes payment through Razorpay
+1. User completes registration
 2. Frontend calls `/api/verify-payment` with payment details
 3. Backend verifies payment signature and status
 4. Backend sends TWO emails in sequence:

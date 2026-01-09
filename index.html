@@ -6,26 +6,6 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Event Registration</title>
-  <!-- Razorpay script with simple loading mechanism -->
-  <script>
-    window.razorpayReady = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-
-      script.onload = () => {
-        console.log('✅ Razorpay loaded successfully');
-        resolve(true);
-      };
-
-      script.onerror = () => {
-        console.error('❌ Failed to load Razorpay');
-        reject(new Error('Razorpay failed to load'));
-      };
-
-      document.head.appendChild(script);
-    });
-  </script>
 </head>
 
 <body>

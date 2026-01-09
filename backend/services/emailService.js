@@ -82,7 +82,7 @@ const generateRegistrationSuccessEmail = (registrationData) => {
               </div>
               <div class="detail-row">
                 <span class="label">Amount Paid:</span>
-                <span class="value">₹${amount}</span>
+                <span class="value">₹${amount / 100}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Registration Date:</span>
@@ -120,7 +120,7 @@ Name: ${name}
 Email: ${email}
 College: ${college}
 Year: ${year}
-Amount Paid: ₹${amount}
+Amount Paid: ₹${amount / 100}
 Registration Date: ${new Date(createdAt).toLocaleString('en-IN')}
 
 Note: You will receive a separate email shortly containing your E-Ticket and QR Code for entry.

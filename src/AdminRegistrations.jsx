@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { buildApiUrl } from './config'
+import PaymentVerificationModal from './PaymentVerificationModal'
 
 const AdminRegistrations = () => {
   const [registrations, setRegistrations] = useState([])
@@ -15,6 +16,8 @@ const AdminRegistrations = () => {
   })
   const [pagination, setPagination] = useState({})
   const [updating, setUpdating] = useState('')
+  const [selectedRegistration, setSelectedRegistration] = useState(null)
+  const [showVerificationModal, setShowVerificationModal] = useState(false)
   const navigate = useNavigate()
 
   const getAuthHeaders = () => {
@@ -60,7 +63,7 @@ const AdminRegistrations = () => {
   const updatePaymentStatus = async (id, newStatus) => {
     try {
       setUpdating(id)
-      const response = await fetch(buildApiUrl(`/api/admin/registrations/${id}/status`), {
+      const response = await fetch(buildApiUrl(`/api/registrations/${id}/payment-status`), {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ paymentStatus: newStatus })
@@ -82,6 +85,45 @@ const AdminRegistrations = () => {
     } finally {
       setUpdating('')
     }
+  }
+
+  const verifyPayment = async (id, approved, notes = '', rejectionReason = '') => {
+    try {
+      const response = await fetch(buildApiUrl(`/api/registrations/${id}/verify`), {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          approved, 
+          notes, 
+          rejectionReason 
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Update local state
+        setRegistrations(prev => 
+          prev.map(reg => 
+            reg._id === id ? data.data : reg
+          )
+        )
+        alert(approved ? 'Payment approved and ticket sent!' : 'Payment rejected')
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error verifying payment')
+    }
+  }
+
+  const openVerificationModal = (registration) => {
+    setSelectedRegistration(registration)
+    setShowVerificationModal(true)
+  }
+
+  const closeVerificationModal = () => {
+    setSelectedRegistration(null)
+    setShowVerificationModal(false)
   }
 
   const deleteRegistration = async (id) => {
@@ -129,12 +171,33 @@ const AdminRegistrations = () => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800'
-      case 'pending':
+      case 'verified':
+        return 'bg-blue-100 text-blue-800'
+      case 'paid_awaiting_verification':
         return 'bg-yellow-100 text-yellow-800'
+      case 'pending':
+        return 'bg-gray-100 text-gray-800'
       case 'failed':
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'paid_awaiting_verification':
+        return 'Awaiting Verification'
+      case 'completed':
+        return 'Completed'
+      case 'verified':
+        return 'Verified'
+      case 'pending':
+        return 'Payment Pending'
+      case 'failed':
+        return 'Failed'
+      default:
+        return status
     }
   }
 
@@ -186,8 +249,10 @@ const AdminRegistrations = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">All Statuses</option>
+                <option value="pending">Payment Pending</option>
+                <option value="paid_awaiting_verification">Awaiting Verification</option>
+                <option value="verified">Verified</option>
                 <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
                 <option value="failed">Failed</option>
               </select>
             </div>
@@ -276,29 +341,51 @@ const AdminRegistrations = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(registration.paymentStatus)}`}>
-                          {registration.paymentStatus}
+                          {getStatusLabel(registration.paymentStatus)}
                         </span>
                         <div className="text-sm text-gray-500 mt-1">
-                          ₹{registration.amount}
+                          ₹{registration.amount / 100}
                         </div>
+                        {registration.upiTransactionId && (
+                          <div className="text-xs text-gray-400 font-mono mt-1">
+                            UTR: {registration.upiTransactionId}
+                          </div>
+                        )}
+                        {registration.paymentSubmittedAt && (
+                          <div className="text-xs text-gray-400 mt-1">
+                            Submitted: {new Date(registration.paymentSubmittedAt).toLocaleDateString()}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <select
-                          value={registration.paymentStatus}
-                          onChange={(e) => updatePaymentStatus(registration._id, e.target.value)}
-                          disabled={updating === registration._id}
-                          className="text-xs px-2 py-1 border border-gray-300 rounded"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="completed">Completed</option>
-                          <option value="failed">Failed</option>
-                        </select>
-                        <button
-                          onClick={() => deleteRegistration(registration._id)}
-                          className="text-red-600 hover:text-red-900 ml-2"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex flex-col space-y-2">
+                          {registration.paymentStatus === 'paid_awaiting_verification' && (
+                            <button
+                              onClick={() => openVerificationModal(registration)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium"
+                            >
+                              Verify Payment
+                            </button>
+                          )}
+                          <select
+                            value={registration.paymentStatus}
+                            onChange={(e) => updatePaymentStatus(registration._id, e.target.value)}
+                            disabled={updating === registration._id}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded"
+                          >
+                            <option value="pending">Payment Pending</option>
+                            <option value="paid_awaiting_verification">Awaiting Verification</option>
+                            <option value="verified">Verified</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                          </select>
+                          <button
+                            onClick={() => deleteRegistration(registration._id)}
+                            className="text-red-600 hover:text-red-900 text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -340,6 +427,14 @@ const AdminRegistrations = () => {
           )}
         </div>
       </div>
+      
+      {/* Payment Verification Modal */}
+      <PaymentVerificationModal
+        registration={selectedRegistration}
+        isOpen={showVerificationModal}
+        onClose={closeVerificationModal}
+        onVerify={verifyPayment}
+      />
     </div>
   )
 }
