@@ -9,7 +9,7 @@ export const getDashboardStats = async (req, res) => {
     const completedPayments = await Registration.countDocuments({ paymentStatus: 'completed' })
     const pendingPayments = await Registration.countDocuments({ paymentStatus: 'pending' })
     const failedPayments = await Registration.countDocuments({ paymentStatus: 'failed' })
-    
+
     // Get registrations by year
     const yearStats = await Registration.aggregate([
       {
@@ -19,21 +19,21 @@ export const getDashboardStats = async (req, res) => {
         }
       }
     ])
-    
+
     // Get recent registrations (last 10)
     const recentRegistrations = await Registration.find()
       .sort({ createdAt: -1 })
       .limit(10)
       .select('name email college paymentStatus createdAt')
-    
+
     // Calculate total revenue
     const totalRevenue = await Registration.aggregate([
       { $match: { paymentStatus: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ])
-    
-    const revenue = totalRevenue.length > 0 ? totalRevenue[0].total : 0
-    
+
+    const revenue = totalRevenue.length > 0 ? totalRevenue[0].total / 100 : 0
+
     res.json({
       success: true,
       data: {
@@ -58,16 +58,16 @@ export const getDashboardStats = async (req, res) => {
 // Get all registrations with advanced filtering
 export const getAllRegistrations = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      paymentStatus, 
-      year, 
+    const {
+      page = 1,
+      limit = 20,
+      paymentStatus,
+      year,
       search,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query
-    
+
     // Build filter object
     const filter = {}
     if (paymentStatus) filter.paymentStatus = paymentStatus
@@ -79,20 +79,20 @@ export const getAllRegistrations = async (req, res) => {
         { college: { $regex: search, $options: 'i' } }
       ]
     }
-    
+
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit)
-    
+
     // Get registrations
     const registrations = await Registration.find(filter)
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
       .skip(skip)
       .limit(parseInt(limit))
       .select('-__v')
-    
+
     // Get total count for pagination
     const total = await Registration.countDocuments(filter)
-    
+
     res.json({
       success: true,
       data: registrations,
@@ -123,23 +123,23 @@ export const updateRegistrationStatus = async (req, res) => {
         errors: errors.array()
       })
     }
-    
+
     const { id } = req.params
     const { paymentStatus } = req.body
-    
+
     const registration = await Registration.findByIdAndUpdate(
       id,
       { paymentStatus },
       { new: true, runValidators: true }
     )
-    
+
     if (!registration) {
       return res.status(404).json({
         success: false,
         message: 'Registration not found'
       })
     }
-    
+
     res.json({
       success: true,
       message: 'Registration status updated successfully',
@@ -158,16 +158,16 @@ export const updateRegistrationStatus = async (req, res) => {
 export const deleteRegistration = async (req, res) => {
   try {
     const { id } = req.params
-    
+
     const registration = await Registration.findByIdAndDelete(id)
-    
+
     if (!registration) {
       return res.status(404).json({
         success: false,
         message: 'Registration not found'
       })
     }
-    
+
     res.json({
       success: true,
       message: 'Registration deleted successfully'
@@ -185,16 +185,16 @@ export const deleteRegistration = async (req, res) => {
 export const exportRegistrations = async (req, res) => {
   try {
     const { paymentStatus, year } = req.query
-    
+
     // Build filter
     const filter = {}
     if (paymentStatus) filter.paymentStatus = paymentStatus
     if (year) filter.year = year
-    
+
     const registrations = await Registration.find(filter)
       .sort({ createdAt: -1 })
       .select('name email phone college year paymentStatus createdAt')
-    
+
     // Convert to CSV format data
     const csvData = registrations.map(reg => ({
       Name: reg.name,
@@ -207,7 +207,7 @@ export const exportRegistrations = async (req, res) => {
       'Payment Status': reg.paymentStatus || 'N/A',
       'Registration Date': reg.createdAt.toLocaleDateString()
     }))
-    
+
     res.json({
       success: true,
       data: csvData,
@@ -226,16 +226,16 @@ export const exportRegistrations = async (req, res) => {
 export const sendBulkNotification = async (req, res) => {
   try {
     const { subject, message, targetGroup } = req.body
-    
+
     // Build filter based on target group
     const filter = {}
     if (targetGroup === 'completed') filter.paymentStatus = 'completed'
     if (targetGroup === 'pending') filter.paymentStatus = 'pending'
     if (targetGroup === 'failed') filter.paymentStatus = 'failed'
     // 'all' means no filter
-    
+
     const registrations = await Registration.find(filter).select('name email')
-    
+
     if (registrations.length === 0) {
       return res.json({
         success: true,
@@ -250,10 +250,10 @@ export const sendBulkNotification = async (req, res) => {
         }
       })
     }
-    
+
     // Send bulk notification using email service
     const emailResult = await sendBulkEmail(registrations, subject, message)
-    
+
     if (emailResult.success) {
       res.json({
         success: true,
