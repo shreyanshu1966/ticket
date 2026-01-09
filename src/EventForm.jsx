@@ -26,12 +26,13 @@ function EventForm() {
       [name]: value
     }))
 
-    // Clear field-specific validation error
+    // Clear field-specific validation error by removing it from the object
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: null
-      }))
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
     }
 
     // Clear general error
@@ -158,16 +159,16 @@ function EventForm() {
 
   // Handle different states of the form
   if (paymentComplete) {
-    return <PaymentSuccess 
-      registrationData={registrationData} 
-      onStartOver={resetForm} 
+    return <PaymentSuccess
+      registrationData={registrationData}
+      onStartOver={resetForm}
     />
   }
 
   if (showPayment) {
-    return <PaymentForm 
-      registrationData={registrationData} 
-      onPaymentComplete={handlePaymentComplete} 
+    return <PaymentForm
+      registrationData={registrationData}
+      onPaymentComplete={handlePaymentComplete}
     />
   }
 
