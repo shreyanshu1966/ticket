@@ -34,6 +34,11 @@ export const getDashboardStats = async (req, res) => {
 
     const revenue = totalRevenue.length > 0 ? totalRevenue[0].total / 100 : 0
 
+    // Get entry statistics
+    const totalEntriesConfirmed = await Registration.countDocuments({ entryConfirmed: true })
+    const totalScanned = await Registration.countDocuments({ isScanned: true })
+    const awaitingVerification = await Registration.countDocuments({ paymentStatus: 'paid_awaiting_verification' })
+
     res.json({
       success: true,
       data: {
@@ -42,6 +47,9 @@ export const getDashboardStats = async (req, res) => {
         pendingPayments,
         failedPayments,
         totalRevenue: revenue,
+        totalEntriesConfirmed,
+        totalScanned,
+        awaitingVerification,
         yearStats,
         recentRegistrations
       }
