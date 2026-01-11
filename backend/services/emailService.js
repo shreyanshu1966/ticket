@@ -55,7 +55,7 @@ const generateRegistrationSuccessEmail = (registrationData) => {
               <p><strong>Event:</strong> ACD 2025</p>
               <p><strong>Dates:</strong> January 28-29, 2026</p>
               <p><strong>Venue:</strong> Urmilatai Karad Auditorium, MIT ADT Pune</p>
-              <p><strong>Time:</strong> 9:00 AM to 4:00 PM</p>
+              <p><strong>Time:</strong> 8:00 PM to 5:00 PM</p>
             </div>
             
             <div class="details">
@@ -93,6 +93,17 @@ const generateRegistrationSuccessEmail = (registrationData) => {
             <div class="footer">
               <p>Thank you for choosing ACD 2025!</p>
               <p><strong>Event Organization Team</strong></p>
+              
+              <div style="background: #f0f7ff; border: 1px solid #667eea; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #667eea;">📞 For Queries, Contact:</h4>
+                <p style="margin: 5px 0; color: #333;">
+                  <strong>Aayush:</strong> <a href="tel:+919226750350" style="color: #667eea; text-decoration: none;">9226750350</a>
+                </p>
+                <p style="margin: 5px 0; color: #333;">
+                  <strong>Ishan:</strong> <a href="tel:+919552448038" style="color: #667eea; text-decoration: none;">9552448038</a>
+                </p>
+              </div>
+              
               <p>This is an automated email. Please do not reply to this message.</p>
               <p>For support, contact us at mail@acesmitadt.com</p>
             </div>
@@ -112,7 +123,7 @@ EVENT INFORMATION:
 - Event: ACD 2025
 - Dates: January 28-29, 2026
 - Venue: Urmilatai Karad Auditorium, MIT ADT Pune
-- Time: 9:00 AM to 4:00 PM
+- Time: 8:00 PM to 5:00 PM
 
 REGISTRATION DETAILS:
 Registration ID: ${_id}
@@ -186,7 +197,7 @@ Ticket Number: ${ticketNumber}
 Name: ${name}
 Event: ACD 2026 - ACES Community Day
 Date: January 28-29, 2026
-Time: 9:00 AM to 4:00 PM
+Time: 8:00 PM to 5:00 PM
 Location: Urmilatai Karad Auditorium, MIT ADT Pune
 
 Please show this ticket at the venue entry.

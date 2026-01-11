@@ -239,6 +239,11 @@ function EventForm() {
       <div className="w-full max-w-lg">
         <form onSubmit={handleSubmit} className="bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
           <div className="text-center mb-6">
+            <img
+              src="/form.png"
+              alt="Event Registration"
+              className="mx-auto mb-4 max-w-full h-auto rounded-lg"
+            />
             <h1 className="text-2xl font-bold text-white mb-2">Event Registration</h1>
             <p className="text-gray-400 text-sm">Join our amazing event</p>
           </div>
@@ -384,6 +389,26 @@ function EventForm() {
               'Continue to Payment - ₹199'
             )}
           </button>
+
+          <div className="mt-6 bg-[#262626] border border-gray-600 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-purple-400 mb-3 text-center">
+              📞 For Queries, Contact:
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Aayush:</span>
+                <a href="tel:+919226750350" className="text-white hover:text-purple-400 transition-colors">
+                  9226750350
+                </a>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Ishan:</span>
+                <a href="tel:+919552448038" className="text-white hover:text-purple-400 transition-colors">
+                  9552448038
+                </a>
+              </div>
+            </div>
+          </div>
 
           <p className="text-xs text-gray-500 text-center mt-4">
             Your registration data is safe and secure with us.
