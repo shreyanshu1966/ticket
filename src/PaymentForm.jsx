@@ -23,56 +23,22 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
     checkMobile()
   }, [])
 
-  const generateUPILink = (appScheme = null) => {
-    // UPI parameters - mode=02 forces in-app payment (bypasses gallery limitation)
+  const generateUPILink = () => {
+    // NPCI-standard UPI deeplink format
+    // Format: upi://pay?pa=UPI_ID&pn=PAYEE_NAME&am=AMOUNT&cu=INR&tn=TRANSACTION_NOTE
     const upiId = UPI_ID
     const payeeName = EVENT_NAME
     const amount = PAYMENT_AMOUNT
     const transactionNote = `Registration: ${registrationData.name}`
     const currency = 'INR'
-    const mode = '02' // 02 = In-app payment, bypasses PhonePe gallery limitation
 
-    // Build base parameters with proper encoding
-    const baseParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}&mode=${mode}`
-
-    // Detect if Android for Intent URLs
-    const isAndroid = /android/i.test(navigator.userAgent)
-
-    // App-specific deep links with mode parameter
-    if (appScheme === 'phonepe') {
-      // PhonePe specific - using Android Intent for better reliability
-      if (isAndroid) {
-        const intentParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}&mode=${mode}&mc=0000&tr=${Date.now()}`
-        return `intent://pay?${intentParams}#Intent;scheme=phonepe;package=com.phonepe.app;end`
-      }
-      return `phonepe://pay?${baseParams}&mc=0000&tr=${Date.now()}`
-    } else if (appScheme === 'paytm') {
-      if (isAndroid) {
-        return `intent://pay?${baseParams}#Intent;scheme=paytmmp;package=net.one97.paytm;end`
-      }
-      return `paytmmp://pay?${baseParams}`
-    } else if (appScheme === 'gpay') {
-      // Google Pay uses different scheme
-      if (isAndroid) {
-        return `intent://pay?${baseParams}#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end`
-      }
-      return `tez://upi/pay?${baseParams}`
-    } else if (appScheme === 'bhim') {
-      if (isAndroid) {
-        return `intent://pay?${baseParams}#Intent;scheme=bhim;package=in.org.npci.upiapp;end`
-      }
-      return `bhim://upi/pay?${baseParams}`
-    }
-
-    // Generic UPI intent with mode parameter (works with most apps)
-    if (isAndroid) {
-      return `intent://pay?${baseParams}#Intent;scheme=upi;end`
-    }
-    return `upi://pay?${baseParams}`
+    // Build NPCI-standard UPI link with proper encoding
+    // Only encode values, not the URL structure
+    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}`
   }
 
-  const handleUPIPay = (appScheme = null) => {
-    const upiLink = generateUPILink(appScheme)
+  const handleUPIPay = () => {
+    const upiLink = generateUPILink()
 
     console.log('Opening UPI link:', upiLink) // Debug log
 
@@ -262,22 +228,17 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                     <div className="text-xs">
-                      <p className="text-red-400 font-semibold mb-1">⚠️ PhonePe Users - IMPORTANT!</p>
-                      <p className="text-red-200 mb-2">
-                        <strong>If you see "can only pay ₹2,000 via gallery" error:</strong>
+                      <p className="text-red-400 font-semibold mb-1">PhonePe Users - Important!</p>
+                      <p className="text-red-200">
+                        If you see "can only pay ₹2,000 via gallery" error, use the buttons below instead of downloading the QR code. These buttons will open PhonePe directly.
                       </p>
-                      <ul className="text-red-200 space-y-1 ml-3">
-                        <li>✅ <strong>DO:</strong> Use the PhonePe button below (opens app directly)</li>
-                        <li>✅ <strong>DO:</strong> Copy UPI ID and pay manually in PhonePe</li>
-                        <li>❌ <strong>DON'T:</strong> Download QR code and open from gallery</li>
-                      </ul>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleUPIPay('phonepe')}
+                    onClick={() => handleUPIPay()}
                     className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -287,7 +248,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                   </button>
 
                   <button
-                    onClick={() => handleUPIPay('gpay')}
+                    onClick={() => handleUPIPay()}
                     className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -297,7 +258,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                   </button>
 
                   <button
-                    onClick={() => handleUPIPay('paytm')}
+                    onClick={() => handleUPIPay()}
                     className="bg-cyan-600 hover:bg-cyan-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -307,7 +268,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                   </button>
 
                   <button
-                    onClick={() => handleUPIPay('bhim')}
+                    onClick={() => handleUPIPay()}
                     className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
