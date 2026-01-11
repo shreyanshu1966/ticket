@@ -26,7 +26,7 @@ const Ticket = ({ data }) => {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white tracking-tight">ACD 2026</h1>
-                                <p className="text-purple-400 font-medium tracking-wide text-sm uppercase">Annual Cultural Day</p>
+                                <p className="text-purple-400 font-medium tracking-wide text-sm uppercase">ACES Community Day</p>
                             </div>
                         </div>
                         <div className="text-right hidden sm:block">

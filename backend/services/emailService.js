@@ -53,9 +53,9 @@ const generateRegistrationSuccessEmail = (registrationData) => {
             <div class="event-info">
               <h3>🎪 Event Information</h3>
               <p><strong>Event:</strong> ACD 2025</p>
-              <p><strong>Dates:</strong> January 29-30, 2026</p>
-              <p><strong>Venue:</strong> Will be announced soon</p>
-              <p><strong>Time:</strong> 9:00 AM onwards</p>
+              <p><strong>Dates:</strong> January 28-29, 2026</p>
+              <p><strong>Venue:</strong> Urmilatai Karad Auditorium, MIT ADT Pune</p>
+              <p><strong>Time:</strong> 9:00 AM to 4:00 PM</p>
             </div>
             
             <div class="details">
@@ -110,9 +110,9 @@ Your registration has been confirmed! Here are your details:
 
 EVENT INFORMATION:
 - Event: ACD 2025
-- Dates: January 29-30, 2026
-- Venue: Will be announced soon
-- Time: 9:00 AM onwards
+- Dates: January 28-29, 2026
+- Venue: Urmilatai Karad Auditorium, MIT ADT Pune
+- Time: 9:00 AM to 4:00 PM
 
 REGISTRATION DETAILS:
 Registration ID: ${_id}
@@ -184,10 +184,10 @@ Your E-Ticket for ACD 2026
 
 Ticket Number: ${ticketNumber}
 Name: ${name}
-Event: ACD 2026 - Annual Cultural Day
-Date: January 29-30, 2026
-Time: 9:00 AM Onwards
-Location: Auditorium
+Event: ACD 2026 - ACES Community Day
+Date: January 28-29, 2026
+Time: 9:00 AM to 4:00 PM
+Location: Urmilatai Karad Auditorium, MIT ADT Pune
 
 Please show this ticket at the venue entry.
 

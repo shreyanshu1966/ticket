@@ -95,7 +95,7 @@ export const verifyQRCode = (qrData) => {
 export const generateTicketHTML = (registrationData) => {
   const { name, email, college, year, ticketNumber, _id, amount } = registrationData
   const eventDate = "January 28-29, 2026"
-  const eventTime = "8:00 AM - 5:00 PM"
+  const eventTime = "9:00 AM - 4:00 PM"
   const ticketType = "General Entry"
 
   return `
@@ -108,14 +108,14 @@ export const generateTicketHTML = (registrationData) => {
             <tr>
               <td width="50" valign="middle">
                 <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 10px; padding: 2px;">
-                  <div style="background: #1a1a1a; width: 100%; height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                    <img src="cid:aces-logo" alt="ACES Logo" style="width: 32px; height: 32px; object-fit: contain; border: 0;" />
+                  <div style="background: #1a1a1a; width: 100%; height: 100%; border-radius: 8px; text-align: center; line-height: 36px; overflow: hidden;">
+                    <img src="cid:aces-logo" alt="ACES Logo" style="width: 32px; height: 32px; object-fit: contain; border: 0; display: inline-block; vertical-align: middle;" />
                   </div>
                 </div>
               </td>
               <td valign="middle" style="padding-left: 12px;">
                 <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: white; line-height: 1.2;">ACD 2026</h1>
-                <p style="margin: 0; color: #a855f7; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Annual Cultural Day</p>
+                <p style="margin: 0; color: #a855f7; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">ACES Community Day</p>
               </td>
               <td align="right" valign="top">
                 <span style="background-color: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; padding: 4px 10px; color: #d8b4fe; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; display: inline-block; white-space: nowrap;">Official Ticket</span>
@@ -181,7 +181,7 @@ export const generateTicketHTML = (registrationData) => {
                           </td>
                           <td style="padding-left: 6px;">
                             <p style="margin: 0; color: #6b7280; font-size: 8px; font-weight: 700; text-transform: uppercase;">Time</p>
-                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">8 AM - 5 PM</p>
+                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">9 AM - 4 PM</p>
                           </td>
                         </tr>
                       </table>
