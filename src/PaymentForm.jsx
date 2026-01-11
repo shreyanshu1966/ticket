@@ -24,17 +24,15 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
   }, [])
 
   const generateUPILink = () => {
-    // NPCI-standard UPI deeplink format
-    // Format: upi://pay?pa=UPI_ID&pn=PAYEE_NAME&am=AMOUNT&cu=INR&tn=TRANSACTION_NOTE
+    // NPCI-standard UPI deeplink format (static parameters only)
+    // Format: upi://pay?pa=UPI_ID&pn=PAYEE_NAME&am=AMOUNT&cu=INR
     const upiId = UPI_ID
     const payeeName = EVENT_NAME
     const amount = PAYMENT_AMOUNT
-    const transactionNote = `Registration: ${registrationData.name}`
     const currency = 'INR'
 
-    // Build NPCI-standard UPI link with proper encoding
-    // Only encode values, not the URL structure
-    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}`
+    // Build NPCI-standard UPI link without dynamic text
+    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}`
   }
 
   const handleUPIPay = () => {
