@@ -14,14 +14,21 @@ The ticket registration system now uses **UPI deep links** for payment with manu
 ### 2. Payment Process
 
 #### For Mobile Users:
-- **UPI Deep Link Button** is displayed
-- When clicked, it opens the user's UPI app directly with pre-filled payment details
-- UPI URL format: `upi://pay?pa=UPI_ID&pn=EVENT_NAME&am=AMOUNT&cu=INR&tn=Registration: USER_NAME`
+- **Multiple UPI App Buttons** are displayed (PhonePe, Google Pay, Paytm, BHIM)
+- App-specific deep links for better compatibility:
+  - PhonePe: `phonepe://pay?pa=...`
+  - Google Pay: `tez://upi/pay?pa=...`
+  - Paytm: `paytmmp://pay?pa=...`
+  - BHIM: `bhim://pay?pa=...`
+  - Generic: `upi://pay?pa=...` (for other apps)
+- When clicked, it opens the selected UPI app directly with pre-filled payment details
+- **⚠️ PhonePe Gallery Limitation**: Users are warned NOT to download QR codes and open from gallery (₹2,000 limit)
 - User completes payment in their UPI app
 
 #### For Desktop Users:
 - **QR Code** is displayed (from `/public/upi_qr.jpeg`)
-- User scans the QR code with their phone's UPI app
+- **⚠️ Important Warning**: Users must scan QR code directly, NOT download and open from gallery
+- User scans the QR code with their phone's UPI app camera
 - User completes payment in their UPI app
 
 ### 3. Payment Verification Submission
