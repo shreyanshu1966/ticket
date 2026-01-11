@@ -23,8 +23,6 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
     checkMobile()
   }, [])
 
-  // Static UPI deeplink - NPCI standard format
-  const UPI_LINK = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(EVENT_NAME)}&am=${PAYMENT_AMOUNT}&cu=INR`
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -193,8 +191,9 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
             </div>
           ) : (
             <div className="space-y-4 mb-6">
-              <div className="bg-[#262626] rounded-lg p-4 border border-gray-600">
-                <h3 className="font-semibold text-purple-400 mb-3 text-center">Choose Your UPI App</h3>
+              {/* QR Code Section for Mobile */}
+              <div className="bg-[#262626] rounded-lg p-6 border border-gray-600">
+                <h3 className="font-semibold text-purple-400 mb-4 text-center">Scan QR Code to Pay</h3>
 
                 {/* Warning about PhonePe Gallery Limitation */}
                 <div className="mb-4 bg-red-900/30 border border-red-600/50 rounded-lg p-3">
@@ -205,65 +204,29 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                     <div className="text-xs">
                       <p className="text-red-400 font-semibold mb-1">PhonePe Users - Important!</p>
                       <p className="text-red-200">
-                        If you see "can only pay ₹2,000 via gallery" error, use the buttons below instead of downloading the QR code. These buttons will open PhonePe directly.
+                        <strong>DO NOT download this QR code and open from gallery.</strong> PhonePe limits gallery payments to ₹2,000. Instead, scan this QR code directly using your phone's camera or PhonePe's scan feature.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <a
-                    href={UPI_LINK}
-                    className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
-                  >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-                    </svg>
-                    <span className="text-sm">PhonePe</span>
-                  </a>
-
-                  <a
-                    href={UPI_LINK}
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
-                  >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                    </svg>
-                    <span className="text-sm">Google Pay</span>
-                  </a>
-
-                  <a
-                    href={UPI_LINK}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
-                  >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-                    </svg>
-                    <span className="text-sm">Paytm</span>
-                  </a>
-
-                  <a
-                    href={UPI_LINK}
-                    className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
-                  >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
-                    </svg>
-                    <span className="text-sm">BHIM UPI</span>
-                  </a>
+                <div className="flex justify-center mb-4">
+                  <div className="bg-white p-4 rounded-lg">
+                    <img
+                      src="/upi_qr.jpeg"
+                      alt="UPI QR Code"
+                      className="w-64 h-64 object-contain"
+                    />
+                  </div>
                 </div>
-
-                <a
-                  href={UPI_LINK}
-                  className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center no-underline"
-                >
-                  Other UPI Apps
-                </a>
+                <p className="text-center text-gray-400 text-sm">
+                  Open any UPI app on your phone and <strong>scan this QR code directly</strong>
+                </p>
               </div>
 
-              {/* Manual UPI ID Copy Option */}
+              {/* Copy UPI ID Option */}
               <div className="bg-[#262626] rounded-lg p-4 border border-gray-600">
-                <h3 className="font-semibold text-green-400 mb-2 text-sm text-center">Still Having Issues?</h3>
+                <h3 className="font-semibold text-green-400 mb-2 text-sm text-center">Or Pay Using UPI ID</h3>
                 <p className="text-gray-400 text-xs mb-3 text-center">
                   Copy the UPI ID below and pay manually in any UPI app
                 </p>
@@ -293,10 +256,6 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                 <p className="text-gray-500 text-xs mt-2 text-center">
                   Open your UPI app → Enter this UPI ID → Pay ₹{PAYMENT_AMOUNT}
                 </p>
-              </div>
-
-              <div className="text-center">
-                <span className="text-gray-500 text-sm">OR</span>
               </div>
 
               <button
