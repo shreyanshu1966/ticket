@@ -94,8 +94,8 @@ export const verifyQRCode = (qrData) => {
 // Generate ticket HTML for email
 export const generateTicketHTML = (registrationData) => {
   const { name, email, college, year, ticketNumber, _id, amount } = registrationData
-  const eventDate = "January 29-30, 2026"
-  const eventTime = "9:00 AM Onwards"
+  const eventDate = "January 28-29, 2026"
+  const eventTime = "8:00 AM - 5:00 PM"
   const ticketType = "General Entry"
 
   return `
@@ -168,7 +168,7 @@ export const generateTicketHTML = (registrationData) => {
                           </td>
                           <td style="padding-left: 6px;">
                             <p style="margin: 0; color: #6b7280; font-size: 8px; font-weight: 700; text-transform: uppercase;">Date</p>
-                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">Jan 29-30</p>
+                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">Jan 28-29</p>
                           </td>
                         </tr>
                       </table>
@@ -181,7 +181,7 @@ export const generateTicketHTML = (registrationData) => {
                           </td>
                           <td style="padding-left: 6px;">
                             <p style="margin: 0; color: #6b7280; font-size: 8px; font-weight: 700; text-transform: uppercase;">Time</p>
-                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">9:00 AM</p>
+                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">8 AM - 5 PM</p>
                           </td>
                         </tr>
                       </table>
@@ -194,7 +194,7 @@ export const generateTicketHTML = (registrationData) => {
                           </td>
                           <td style="padding-left: 6px;">
                             <p style="margin: 0; color: #6b7280; font-size: 8px; font-weight: 700; text-transform: uppercase;">Location</p>
-                            <p style="margin: 0; color: #d1d5db; font-size: 10px; font-weight: 500;">Auditorium</p>
+                            <p style="margin: 0; color: #d1d5db; font-size: 9px; font-weight: 500; line-height: 1.3;">Urmilatai Karad Auditorium, MIT ADT Pune</p>
                           </td>
                         </tr>
                       </table>
