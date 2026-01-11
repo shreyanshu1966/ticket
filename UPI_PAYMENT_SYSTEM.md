@@ -271,15 +271,22 @@ Fixed the `ticketNumber` index issue:
 1. **UPI app not opening on mobile**:
    - Check if UPI ID is correct in config
    - Ensure user has UPI app installed
+   - Try using app-specific buttons instead of generic UPI link
 
-2. **QR code not displaying**:
+2. **PhonePe "₹2,000 gallery limit" error**:
+   - User downloaded QR code and opened from gallery
+   - Solution: Use the app-specific buttons on mobile
+   - Or scan QR code directly with camera (don't download)
+   - See `PHONEPE_GALLERY_LIMITATION.md` for details
+
+3. **QR code not displaying**:
    - Verify `/public/upi_qr.jpeg` exists
    - Check file permissions
 
-3. **Database errors**:
+4. **Database errors**:
    - Run `node fix_ticket_index.js` if needed
    - Check MongoDB connection
 
-4. **Email not sending**:
+5. **Email not sending**:
    - Verify email configuration in backend `.env`
    - Check email service credentials

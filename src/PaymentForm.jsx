@@ -24,33 +24,65 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
   }, [])
 
   const generateUPILink = (appScheme = null) => {
-    const baseParams = `pa=${UPI_ID}&pn=${encodeURIComponent(EVENT_NAME)}&am=${PAYMENT_AMOUNT}&cu=INR&tn=${encodeURIComponent(`Registration: ${registrationData.name}`)}`
+    // UPI parameters - mode=02 forces in-app payment (bypasses gallery limitation)
+    const upiId = UPI_ID
+    const payeeName = EVENT_NAME
+    const amount = PAYMENT_AMOUNT
+    const transactionNote = `Registration: ${registrationData.name}`
+    const currency = 'INR'
+    const mode = '02' // 02 = In-app payment, bypasses PhonePe gallery limitation
 
-    // App-specific deep links
+    // Build base parameters with proper encoding
+    const baseParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}&mode=${mode}`
+
+    // Detect if Android for Intent URLs
+    const isAndroid = /android/i.test(navigator.userAgent)
+
+    // App-specific deep links with mode parameter
     if (appScheme === 'phonepe') {
-      return `phonepe://pay?${baseParams}`
+      // PhonePe specific - using Android Intent for better reliability
+      if (isAndroid) {
+        const intentParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}&tn=${encodeURIComponent(transactionNote)}&mode=${mode}&mc=0000&tr=${Date.now()}`
+        return `intent://pay?${intentParams}#Intent;scheme=phonepe;package=com.phonepe.app;end`
+      }
+      return `phonepe://pay?${baseParams}&mc=0000&tr=${Date.now()}`
     } else if (appScheme === 'paytm') {
+      if (isAndroid) {
+        return `intent://pay?${baseParams}#Intent;scheme=paytmmp;package=net.one97.paytm;end`
+      }
       return `paytmmp://pay?${baseParams}`
     } else if (appScheme === 'gpay') {
+      // Google Pay uses different scheme
+      if (isAndroid) {
+        return `intent://pay?${baseParams}#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end`
+      }
       return `tez://upi/pay?${baseParams}`
     } else if (appScheme === 'bhim') {
-      return `bhim://pay?${baseParams}`
+      if (isAndroid) {
+        return `intent://pay?${baseParams}#Intent;scheme=bhim;package=in.org.npci.upiapp;end`
+      }
+      return `bhim://upi/pay?${baseParams}`
     }
 
-    // Generic UPI intent (works with most apps)
+    // Generic UPI intent with mode parameter (works with most apps)
+    if (isAndroid) {
+      return `intent://pay?${baseParams}#Intent;scheme=upi;end`
+    }
     return `upi://pay?${baseParams}`
   }
 
   const handleUPIPay = (appScheme = null) => {
     const upiLink = generateUPILink(appScheme)
 
+    console.log('Opening UPI link:', upiLink) // Debug log
+
     // Try to open UPI app
     window.location.href = upiLink
 
-    // Also provide fallback options
+    // Fallback: If app doesn't open in 3 seconds, show manual payment option
     setTimeout(() => {
       setShowInstructions(false)
-    }, 2000)
+    }, 3000)
   }
 
   const handleFileChange = (e) => {
@@ -230,10 +262,15 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                     <div className="text-xs">
-                      <p className="text-red-400 font-semibold mb-1">PhonePe Users - Important!</p>
-                      <p className="text-red-200">
-                        If you see "can only pay ₹2,000 via gallery" error, use the buttons below instead of downloading the QR code. These buttons will open PhonePe directly.
+                      <p className="text-red-400 font-semibold mb-1">⚠️ PhonePe Users - IMPORTANT!</p>
+                      <p className="text-red-200 mb-2">
+                        <strong>If you see "can only pay ₹2,000 via gallery" error:</strong>
                       </p>
+                      <ul className="text-red-200 space-y-1 ml-3">
+                        <li>✅ <strong>DO:</strong> Use the PhonePe button below (opens app directly)</li>
+                        <li>✅ <strong>DO:</strong> Copy UPI ID and pay manually in PhonePe</li>
+                        <li>❌ <strong>DON'T:</strong> Download QR code and open from gallery</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -286,6 +323,40 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                 >
                   Other UPI Apps
                 </button>
+              </div>
+
+              {/* Manual UPI ID Copy Option */}
+              <div className="bg-[#262626] rounded-lg p-4 border border-gray-600">
+                <h3 className="font-semibold text-green-400 mb-2 text-sm text-center">Still Having Issues?</h3>
+                <p className="text-gray-400 text-xs mb-3 text-center">
+                  Copy the UPI ID below and pay manually in any UPI app
+                </p>
+                <div className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 mb-1">UPI ID</p>
+                      <p className="text-white font-mono text-sm">{UPI_ID}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(UPI_ID)
+                        alert('UPI ID copied to clipboard!')
+                      }}
+                      className="ml-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-700">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Amount:</span>
+                      <span className="text-white font-bold">₹{PAYMENT_AMOUNT}</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-500 text-xs mt-2 text-center">
+                  Open your UPI app → Enter this UPI ID → Pay ₹{PAYMENT_AMOUNT}
+                </p>
               </div>
 
               <div className="text-center">
