@@ -23,31 +23,8 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
     checkMobile()
   }, [])
 
-  const generateUPILink = () => {
-    // NPCI-standard UPI deeplink format (static parameters only)
-    // Format: upi://pay?pa=UPI_ID&pn=PAYEE_NAME&am=AMOUNT&cu=INR
-    const upiId = UPI_ID
-    const payeeName = EVENT_NAME
-    const amount = PAYMENT_AMOUNT
-    const currency = 'INR'
-
-    // Build NPCI-standard UPI link without dynamic text
-    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=${currency}`
-  }
-
-  const handleUPIPay = () => {
-    const upiLink = generateUPILink()
-
-    console.log('Opening UPI link:', upiLink) // Debug log
-
-    // Try to open UPI app
-    window.location.href = upiLink
-
-    // Fallback: If app doesn't open in 3 seconds, show manual payment option
-    setTimeout(() => {
-      setShowInstructions(false)
-    }, 3000)
-  }
+  // Static UPI deeplink - NPCI standard format
+  const UPI_LINK = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(EVENT_NAME)}&am=${PAYMENT_AMOUNT}&cu=INR`
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -235,53 +212,53 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleUPIPay()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
+                  <a
+                    href={UPI_LINK}
+                    className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
                     </svg>
                     <span className="text-sm">PhonePe</span>
-                  </button>
+                  </a>
 
-                  <button
-                    onClick={() => handleUPIPay()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
+                  <a
+                    href={UPI_LINK}
+                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                     </svg>
                     <span className="text-sm">Google Pay</span>
-                  </button>
+                  </a>
 
-                  <button
-                    onClick={() => handleUPIPay()}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
+                  <a
+                    href={UPI_LINK}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
                     </svg>
                     <span className="text-sm">Paytm</span>
-                  </button>
+                  </a>
 
-                  <button
-                    onClick={() => handleUPIPay()}
-                    className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all"
+                  <a
+                    href={UPI_LINK}
+                    className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-semibold flex flex-col items-center justify-center space-y-1 transition-all no-underline"
                   >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
                     </svg>
                     <span className="text-sm">BHIM UPI</span>
-                  </button>
+                  </a>
                 </div>
 
-                <button
-                  onClick={() => handleUPIPay()}
-                  className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-all"
+                <a
+                  href={UPI_LINK}
+                  className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center no-underline"
                 >
                   Other UPI Apps
-                </button>
+                </a>
               </div>
 
               {/* Manual UPI ID Copy Option */}
