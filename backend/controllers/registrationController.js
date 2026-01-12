@@ -92,7 +92,7 @@ export const registerDirect = async (req, res) => {
       const emailResult = await sendConfirmationEmail(registration)
       if (emailResult.success) {
         console.log('✅ Confirmation email sent successfully')
-        
+
         // Update registration with email details if available
         if (emailResult.ticketNumber) {
           registration.ticketNumber = emailResult.ticketNumber
@@ -166,6 +166,79 @@ export const updatePaymentStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while updating payment status'
+    })
+  }
+}
+
+// Check email status for pending payments (Option 3)
+export const checkEmailStatus = async (req, res) => {
+  try {
+    const { email } = req.query
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      })
+    }
+
+    const registration = await Registration.findOne({
+      email: email.toLowerCase()
+    }).select('-__v -paymentScreenshot')
+
+    if (!registration) {
+      return res.json({
+        success: true,
+        exists: false,
+        message: 'Email not found'
+      })
+    }
+
+    // Return different responses based on payment status
+    if (registration.paymentStatus === 'pending') {
+      return res.json({
+        success: true,
+        exists: true,
+        hasPendingPayment: true,
+        message: 'Email has pending payment',
+        data: {
+          id: registration._id,
+          name: registration.name,
+          email: registration.email,
+          college: registration.college,
+          year: registration.year,
+          paymentStatus: registration.paymentStatus,
+          amount: registration.amount,
+          createdAt: registration.createdAt
+        }
+      })
+    } else if (registration.paymentStatus === 'paid_awaiting_verification') {
+      return res.json({
+        success: true,
+        exists: true,
+        hasPendingPayment: false,
+        message: 'Payment submitted, awaiting verification',
+        data: {
+          paymentStatus: registration.paymentStatus
+        }
+      })
+    } else {
+      return res.json({
+        success: true,
+        exists: true,
+        hasPendingPayment: false,
+        message: 'Email already registered',
+        data: {
+          paymentStatus: registration.paymentStatus
+        }
+      })
+    }
+
+  } catch (error) {
+    console.error('❌ Email check error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Server error while checking email'
     })
   }
 }
@@ -335,7 +408,7 @@ export const verifyPayment = async (req, res) => {
         const emailResult = await sendConfirmationEmail(registration)
         if (emailResult.success) {
           console.log('✅ Ticket email sent successfully')
-          
+
           // Update registration with ticket details
           if (emailResult.ticketNumber) {
             registration.ticketNumber = emailResult.ticketNumber

@@ -176,8 +176,8 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                 <div className="flex justify-center mb-4">
                   <div className="bg-white p-4 rounded-lg">
                     <img
-                      src="/upi_qr.jpeg"
-                      alt="UPI QR Code"
+                      src="/aayushqr.jpeg"
+                      alt="Aayush UPI QR Code"
                       className="w-64 h-64 object-contain"
                     />
                   </div>
@@ -218,8 +218,8 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                 <div className="flex justify-center mb-4">
                   <div className="bg-white p-4 rounded-lg">
                     <img
-                      src="/upi_qr.jpeg"
-                      alt="UPI QR Code"
+                      src="/aayushqr.jpeg"
+                      alt="Aayush UPI QR Code"
                       className="w-64 h-64 object-contain"
                     />
                   </div>

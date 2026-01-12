@@ -19,6 +19,11 @@ function EventForm() {
   const [validationErrors, setValidationErrors] = useState({})
   const [registrationData, setRegistrationData] = useState(null)
 
+  // Option 3: Smart form detection states
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [pendingRegistration, setPendingRegistration] = useState(null)
+  const [emailCheckTimeout, setEmailCheckTimeout] = useState(null)
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -38,6 +43,58 @@ function EventForm() {
     // Clear general error
     if (error) {
       setError(null)
+    }
+
+    // Option 3: Check email for pending payments (debounced)
+    if (name === 'email' && value.trim()) {
+      // Clear pending registration when email changes
+      setPendingRegistration(null)
+
+      // Clear previous timeout
+      if (emailCheckTimeout) {
+        clearTimeout(emailCheckTimeout)
+      }
+
+      // Set new timeout for email check (500ms debounce)
+      const timeout = setTimeout(() => {
+        checkEmailForPendingPayment(value.trim())
+      }, 500)
+
+      setEmailCheckTimeout(timeout)
+    }
+  }
+
+  // Option 3: Check if email has pending payment
+  const checkEmailForPendingPayment = async (email) => {
+    // Basic email validation before checking
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return
+    }
+
+    setIsCheckingEmail(true)
+
+    try {
+      const response = await fetch(buildApiUrl(`/api/registrations/check-email?email=${encodeURIComponent(email)}`))
+      const result = await response.json()
+
+      if (result.success && result.exists && result.hasPendingPayment) {
+        setPendingRegistration(result.data)
+      } else {
+        setPendingRegistration(null)
+      }
+    } catch (err) {
+      console.error('Error checking email:', err)
+      // Silently fail - don't disrupt user experience
+    } finally {
+      setIsCheckingEmail(false)
+    }
+  }
+
+  // Option 3: Handle resume payment
+  const handleResumePayment = () => {
+    if (pendingRegistration) {
+      setRegistrationData(pendingRegistration)
+      setShowPayment(true)
     }
   }
 
@@ -290,18 +347,51 @@ function EventForm() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                 Email Address *
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors.email ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
-                placeholder="Enter your email address"
-                disabled={isProcessing}
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors.email ? 'border-red-500' : pendingRegistration ? 'border-yellow-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
+                  placeholder="Enter your email address"
+                  disabled={isProcessing}
+                />
+                {isCheckingEmail && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent"></div>
+                  </div>
+                )}
+              </div>
               {validationErrors.email && (
                 <p className="mt-1 text-sm text-red-400">{validationErrors.email}</p>
+              )}
+
+              {/* Option 3: Pending Payment Detection */}
+              {pendingRegistration && !validationErrors.email && (
+                <div className="mt-3 bg-yellow-950 border border-yellow-800 rounded-lg p-3">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <h3 className="text-sm font-medium text-yellow-300">Pending Payment Found</h3>
+                      <p className="text-xs text-yellow-200 mt-1">
+                        You have a pending registration. Complete your payment to secure your spot!
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleResumePayment}
+                        className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors w-full"
+                      >
+                        Resume Payment - ₹{pendingRegistration.amount / 100}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

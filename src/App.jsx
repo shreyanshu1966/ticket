@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import EventForm from './EventForm'
+import PaymentPage from './PaymentPage'
 import QRScanner from './QRScanner'
 import AdminLogin from './AdminLogin'
 import AdminDashboard from './AdminDashboard'
@@ -72,6 +73,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<EventForm />} />
+        <Route path="/payment/:id" element={<PaymentPage />} />
         <Route path="/scanner" element={<QRScanner />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={

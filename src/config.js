@@ -6,7 +6,7 @@ export const config = {
 
 // Payment Configuration
 export const PAYMENT_CONFIG = {
-  UPI_ID: 'iganarase@okicici', // UPI ID matching the QR code
+  UPI_ID: 'aayushdalvi485-2@okicici', // TODO: Replace with Aayush's actual UPI ID
   AMOUNT: 199, // Amount in rupees
   EVENT_NAME: 'Event Registration'
 }

@@ -1,16 +1,20 @@
 import express from 'express'
-import { 
-  getAllRegistrations, 
+import {
+  getAllRegistrations,
   getRegistrationById,
   registerDirect,
   createRegistration,
   submitPayment,
   verifyPayment,
-  updatePaymentStatus
+  updatePaymentStatus,
+  checkEmailStatus
 } from '../controllers/registrationController.js'
 import { validateRegistration } from '../middleware/validation.js'
 
 const router = express.Router()
+
+// Check email status (for Option 3 - smart form detection)
+router.get('/check-email', checkEmailStatus)
 
 // Get all registrations (with optional pagination)
 router.get('/', getAllRegistrations)
