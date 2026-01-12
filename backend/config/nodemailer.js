@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false, // Trust self-signed certs
-    ciphers: 'SSLv3' // Support older TLS versions if needed
+    minVersion: 'TLSv1.2' // Use modern TLS versions
   },
   requireTLS: port === 587, // Require STARTTLS for port 587
   debug: process.env.DEBUG_EMAIL === 'true',
