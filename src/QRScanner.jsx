@@ -150,13 +150,35 @@ const QRScanner = () => {
         setVerificationResult(result.data)
         setSuccessMessage('Ticket verified successfully!')
       } else {
-        setError(result.message || 'Invalid ticket')
-        setVerificationResult(null)
+        // Enhanced error handling for duplicate entries
+        if (result.error === 'DUPLICATE_ENTRY' && result.data) {
+          const errorMsg = result.data.warningMessage || result.message
+          setError(`⚠️ DUPLICATE ENTRY: ${errorMsg}`)
+
+          // Show additional details in verification result for display
+          setVerificationResult({
+            ...result.data,
+            hasEntered: true,
+            entryTime: result.data.scannedAt,
+            isDuplicate: true
+          })
+
+          console.warn('🚫 Duplicate entry attempt:', {
+            name: result.data.name,
+            ticketNumber: result.data.ticketNumber,
+            previousEntry: result.data.scannedAtFormatted
+          })
+        } else {
+          setError(result.message || 'Invalid ticket')
+          setVerificationResult(null)
+        }
       }
     } catch (err) {
       console.error('Verification error:', err)
       if (err.message.includes('Server error: 404')) {
         setError('Verification service not available. Please check if the backend server is running.')
+      } else if (err.message.includes('Server error: 400')) {
+        setError('Invalid ticket data. Please ensure the QR code is from a valid ACD 2026 ticket.')
       } else {
         setError('Failed to verify ticket. Please try again.')
       }
@@ -480,8 +502,8 @@ const QRScanner = () => {
                 <div className="flex justify-between">
                   <span className="text-blue-600 font-medium">Status:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${verificationResult.hasEntered
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-green-100 text-green-800'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-green-100 text-green-800'
                     }`}>
                     {verificationResult.hasEntered ? 'Already Entered' : 'Valid for Entry'}
                   </span>
