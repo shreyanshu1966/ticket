@@ -63,6 +63,33 @@ export const getDashboardStats = async (req, res) => {
   }
 }
 
+// Get a single registration by ID with full details (including payment screenshot)
+export const getRegistrationById = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const registration = await Registration.findById(id)
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      data: registration
+    })
+  } catch (error) {
+    console.error('Error fetching registration:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching registration details'
+    })
+  }
+}
+
 // Get all registrations with advanced filtering
 export const getAllRegistrations = async (req, res) => {
   try {

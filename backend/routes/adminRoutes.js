@@ -4,6 +4,7 @@ import { adminAuth, adminLogin, scannerAuth } from '../middleware/adminAuth.js'
 import {
   getDashboardStats,
   getAllRegistrations,
+  getRegistrationById,
   updateRegistrationStatus,
   deleteRegistration,
   exportRegistrations,
@@ -32,6 +33,7 @@ router.use(adminAuth)
 router.get('/dashboard/stats', getDashboardStats)
 
 // Registration management
+router.get('/registrations/:id', getRegistrationById) // Get single registration with full details
 router.get('/registrations', getAllRegistrations)
 router.patch('/registrations/:id/status', [
   body('paymentStatus')

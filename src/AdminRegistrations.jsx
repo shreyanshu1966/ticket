@@ -16,6 +16,7 @@ const AdminRegistrations = () => {
   })
   const [pagination, setPagination] = useState({})
   const [updating, setUpdating] = useState('')
+  const [loadingRegistration, setLoadingRegistration] = useState('') // Track which registration is being loaded
   const [selectedRegistration, setSelectedRegistration] = useState(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const navigate = useNavigate()
@@ -116,9 +117,31 @@ const AdminRegistrations = () => {
     }
   }
 
-  const openVerificationModal = (registration) => {
-    setSelectedRegistration(registration)
-    setShowVerificationModal(true)
+  const openVerificationModal = async (registration) => {
+    try {
+      setLoadingRegistration(registration._id)
+      // Fetch full registration details including payment screenshot
+      const response = await fetch(buildApiUrl(`/api/admin/registrations/${registration._id}`), {
+        headers: getAuthHeaders()
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setSelectedRegistration(data.data)
+          setShowVerificationModal(true)
+        } else {
+          setError('Failed to load registration details')
+        }
+      } else {
+        setError('Failed to fetch registration details')
+      }
+    } catch (err) {
+      console.error('Error fetching registration details:', err)
+      setError('Error loading registration details')
+    } finally {
+      setLoadingRegistration('')
+    }
   }
 
   const closeVerificationModal = () => {
@@ -414,9 +437,10 @@ const AdminRegistrations = () => {
                           {registration.paymentStatus === 'paid_awaiting_verification' && (
                             <button
                               onClick={() => openVerificationModal(registration)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium"
+                              disabled={loadingRegistration === registration._id}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Verify Payment
+                              {loadingRegistration === registration._id ? 'Loading...' : 'Verify Payment'}
                             </button>
                           )}
                           <select
