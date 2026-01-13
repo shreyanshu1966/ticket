@@ -114,6 +114,13 @@ const registrationSchema = new mongoose.Schema({
   entryConfirmed: {
     type: Boolean,
     default: false
+  },
+  resendCount: {
+    type: Number,
+    default: 0
+  },
+  lastResentAt: {
+    type: Date
   }
 }, {
   timestamps: true

@@ -476,24 +476,39 @@ export const resendTickets = async (req, res) => {
     // Resend tickets to each recipient
     for (const registration of registrations) {
       try {
+        // Skip if recently resent (within last 2 minutes) to prevent duplicates
+        if (registration.lastResentAt) {
+          const timeSinceLastResend = Date.now() - new Date(registration.lastResentAt).getTime()
+          if (timeSinceLastResend < 120000) { // 2 minutes
+            console.log(`⏭️ Skipping ${registration.email} - resent ${Math.round(timeSinceLastResend / 1000)}s ago`)
+            continue
+          }
+        }
+
         const result = await sendConfirmationEmail(registration)
         if (result.success) {
           sent++
           console.log(`✅ Ticket resent to ${registration.email}`)
 
-          // Update ticket generation status if not already set
-          if (!registration.ticketGenerated) {
-            registration.ticketGenerated = true
-            registration.ticketNumber = result.ticketNumber
-            registration.qrCode = result.qrCode
-            registration.emailSentAt = new Date()
-            await registration.save()
-          }
+          // ✅ CRITICAL FIX: ALWAYS update ticket data, regardless of ticketGenerated status
+          // This prevents ticket number mismatches and scanner failures
+          registration.ticketGenerated = true
+          registration.ticketNumber = result.ticketNumber
+          registration.qrCode = result.qrCode
+          registration.emailSentAt = new Date()  // Update to latest resend time
+
+          // Track resend attempts for audit trail
+          registration.resendCount = (registration.resendCount || 0) + 1
+          registration.lastResentAt = new Date()
+
+          await registration.save()
         } else {
           failed++
           errors.push({
             email: registration.email,
-            error: result.error
+            registrationId: registration._id,
+            error: result.error,
+            timestamp: new Date()
           })
           console.error(`❌ Failed to resend ticket to ${registration.email}:`, result.error)
         }
@@ -504,7 +519,9 @@ export const resendTickets = async (req, res) => {
         failed++
         errors.push({
           email: registration.email,
-          error: error.message
+          registrationId: registration._id,
+          error: error.message,
+          timestamp: new Date()
         })
         console.error(`❌ Error resending ticket to ${registration.email}:`, error.message)
       }
