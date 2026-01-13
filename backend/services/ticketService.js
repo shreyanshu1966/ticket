@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 // Generate unique ticket number
 export const generateTicketNumber = () => {
-  const prefix = 'ACD2025'
+  const prefix = 'ACD2026'
   const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
   const randomNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
   return `${prefix}-${timestamp}${randomNumber}`
@@ -17,7 +17,7 @@ export const generateQRCode = async (ticketData) => {
       registrationId: ticketData.registrationId,
       name: ticketData.name,
       email: ticketData.email,
-      eventCode: 'ACD-2025',
+      eventCode: 'ACD-2026',
       generatedAt: new Date().toISOString()
     })
 
@@ -47,7 +47,7 @@ export const generateQRCodeBuffer = async (ticketData) => {
       registrationId: ticketData.registrationId,
       name: ticketData.name,
       email: ticketData.email,
-      eventCode: 'ACD-2025',
+      eventCode: 'ACD-2026',
       generatedAt: new Date().toISOString()
     })
 
@@ -80,7 +80,7 @@ export const verifyQRCode = (qrData) => {
     }
 
     // Check event code
-    if (data.eventCode !== 'ACD-2025') {
+    if (data.eventCode !== 'ACD-2026') {
       return { valid: false, error: 'Invalid event ticket' }
     }
 

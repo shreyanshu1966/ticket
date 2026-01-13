@@ -22,7 +22,7 @@ function Navigation() {
   return (
     <nav className="bg-blue-600 text-white p-4">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <h1 className="text-xl font-bold">ACD 2025 Event System</h1>
+        <h1 className="text-xl font-bold">ACD 2026 Event System</h1>
         <div className="flex gap-4">
           <Link
             to="/"

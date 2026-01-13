@@ -1,6 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
-import { sendBulkNotification as sendBulkEmail } from '../services/emailService.js'
+import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -242,7 +242,7 @@ export const sendBulkNotification = async (req, res) => {
     if (targetGroup === 'failed') filter.paymentStatus = 'failed'
     // 'all' means no filter
 
-    const registrations = await Registration.find(filter).select('name email')
+    const registrations = await Registration.find(filter).select('name email college year amount createdAt')
 
     if (registrations.length === 0) {
       return res.json({
@@ -259,7 +259,58 @@ export const sendBulkNotification = async (req, res) => {
       })
     }
 
-    // Send bulk notification using email service
+    // Special handling for pending payments - use designed template
+    if (targetGroup === 'pending') {
+      console.log(`📧 Sending designed pending payment emails to ${registrations.length} recipients...`)
+
+      let sent = 0
+      let failed = 0
+      const errors = []
+
+      // Send designed pending payment email to each recipient
+      for (const registration of registrations) {
+        try {
+          const result = await sendPendingPaymentEmail(registration)
+          if (result.success) {
+            sent++
+            console.log(`✅ Pending payment email sent to ${registration.email}`)
+          } else {
+            failed++
+            errors.push({
+              email: registration.email,
+              error: result.error
+            })
+            console.error(`❌ Failed to send to ${registration.email}:`, result.error)
+          }
+
+          // Small delay between emails to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (error) {
+          failed++
+          errors.push({
+            email: registration.email,
+            error: error.message
+          })
+          console.error(`❌ Error sending to ${registration.email}:`, error.message)
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: `Pending payment notifications sent! ${sent} emails sent${failed > 0 ? `, ${failed} failed` : ''}`,
+        data: {
+          sent,
+          failed,
+          total: registrations.length,
+          targetGroup,
+          templateUsed: 'Designed Pending Payment Template (with countdown timer & early bird offer)',
+          subject: '⏰ Complete Your Registration - Early Bird Offer Active | ACD 2026',
+          errors: errors
+        }
+      })
+    }
+
+    // For other groups, use basic bulk notification template
     const emailResult = await sendBulkEmail(registrations, subject, message)
 
     if (emailResult.success) {

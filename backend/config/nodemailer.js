@@ -6,12 +6,12 @@ if (!process.env.EMAIL_HOST) {
   dotenv.config()
 }
 
-// Configure nodemailer with maximum compatibility
+// Configure main transporter for ticketing and registration emails
 const host = process.env.EMAIL_HOST || 'mail.acesmitadt.com'
 const port = parseInt(process.env.EMAIL_PORT) || 587  // Use 587 for STARTTLS (more compatible)
 const secure = port === 465  // Only use SSL for port 465
 
-console.log(`📧 Configuring email: ${host}:${port} (secure: ${secure})`)
+console.log(`📧 Configuring main email: ${host}:${port} (secure: ${secure})`)
 
 const transporter = nodemailer.createTransport({
   host: host,
@@ -39,12 +39,54 @@ const transporter = nodemailer.createTransport({
   logger: process.env.DEBUG_EMAIL === 'true'
 })
 
-// Verify email configuration
+// Configure noreply transporter for notifications
+const noreplyHost = process.env.NOREPLY_EMAIL_HOST || 'mail.acesmitadt.com'
+const noreplyPort = parseInt(process.env.NOREPLY_EMAIL_PORT) || 587  // Port 587 with STARTTLS
+const noreplySecure = noreplyPort === 465  // Only use SSL for port 465
+
+console.log(`📧 Configuring noreply email: ${noreplyHost}:${noreplyPort} (secure: ${noreplySecure})`)
+
+export const noreplyTransporter = nodemailer.createTransport({
+  host: noreplyHost,
+  port: noreplyPort,
+  secure: noreplySecure,
+  auth: {
+    user: process.env.NOREPLY_EMAIL_USER || 'noreply@acesmitadt.com',
+    pass: process.env.NOREPLY_EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false,
+    ciphers: 'ALL'
+  },
+  // Connection settings
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 10,
+  rateDelta: 2000,
+  rateLimit: 1,
+  // Timeouts
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
+  debug: process.env.DEBUG_EMAIL === 'true',
+  logger: process.env.DEBUG_EMAIL === 'true'
+})
+
+// Verify main email configuration
 transporter.verify((error, success) => {
   if (error) {
-    console.log('❌ Email configuration error:', error.message)
+    console.log('❌ Main email configuration error:', error.message)
   } else {
-    console.log('✅ Email server is ready to send messages')
+    console.log('✅ Main email server is ready to send messages')
+  }
+})
+
+// Verify noreply email configuration
+noreplyTransporter.verify((error, success) => {
+  if (error) {
+    console.log('❌ Noreply email configuration error:', error.message)
+  } else {
+    console.log('✅ Noreply email server is ready to send messages')
   }
 })
 

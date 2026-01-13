@@ -1,4 +1,4 @@
-import transporter from '../config/nodemailer.js'
+import transporter, { noreplyTransporter } from '../config/nodemailer.js'
 import { generateTicketNumber, generateQRCodeBuffer, generateTicketHTML } from './ticketService.js'
 import fs from 'fs'
 import path from 'path'
@@ -14,7 +14,7 @@ const generateRegistrationSuccessEmail = (registrationData) => {
   const { name, email, college, year, amount, _id, createdAt } = regData
 
   return {
-    subject: 'Registration Confirmed - ACD 2025',
+    subject: 'Registration Confirmed - ACD 2026',
     html: `
       <!DOCTYPE html>
       <html>
@@ -38,7 +38,7 @@ const generateRegistrationSuccessEmail = (registrationData) => {
         <div class="container">
           <div class="header">
             <h1>🎉 Registration Confirmed!</h1>
-            <p>Welcome to ACD 2025</p>
+            <p>Welcome to ACD 2026</p>
           </div>
           
           <div class="content">
@@ -46,13 +46,13 @@ const generateRegistrationSuccessEmail = (registrationData) => {
             
             <p>Dear <strong>${name}</strong>,</p>
             
-            <p>Thank you for registering for ACD 2025! Your payment has been successfully processed and your registration is now confirmed.</p>
+            <p>Thank you for registering for ACD 2026! Your payment has been successfully processed and your registration is now confirmed.</p>
             
             <p><strong>Note:</strong> You will receive a separate email shortly containing your E-Ticket and QR Code for entry.</p>
 
             <div class="event-info">
               <h3>🎪 Event Information</h3>
-              <p><strong>Event:</strong> ACD 2025</p>
+              <p><strong>Event:</strong> ACD 2026</p>
               <p><strong>Dates:</strong> January 28-29, 2026</p>
               <p><strong>Venue:</strong> Urmilatai Karad Auditorium, MIT ADT Pune</p>
               <p><strong>Time:</strong> 8:00 PM to 5:00 PM</p>
@@ -91,7 +91,7 @@ const generateRegistrationSuccessEmail = (registrationData) => {
             </div>
             
             <div class="footer">
-              <p>Thank you for choosing ACD 2025!</p>
+              <p>Thank you for choosing ACD 2026!</p>
               <p><strong>Event Organization Team</strong></p>
               
               <div style="background: #f0f7ff; border: 1px solid #667eea; padding: 15px; border-radius: 8px; margin: 20px 0;">
@@ -113,14 +113,14 @@ const generateRegistrationSuccessEmail = (registrationData) => {
       </html>
     `,
     text: `
-ACD 2025 Event Registration Confirmation
+ACD 2026 Event Registration Confirmation
 
 Dear ${name},
 
 Your registration has been confirmed! Here are your details:
 
 EVENT INFORMATION:
-- Event: ACD 2025
+- Event: ACD 2026
 - Dates: January 28-29, 2026
 - Venue: Urmilatai Karad Auditorium, MIT ADT Pune
 - Time: 8:00 PM to 5:00 PM
@@ -136,7 +136,7 @@ Registration Date: ${new Date(createdAt).toLocaleString('en-IN')}
 
 Note: You will receive a separate email shortly containing your E-Ticket and QR Code for entry.
 
-Thank you for registering for ACD 2025!
+Thank you for registering for ACD 2026!
 
 Event Organization Team
     `
@@ -214,20 +214,18 @@ const generatePendingPaymentEmail = (registrationData) => {
   const regData = registrationData.toObject ? registrationData.toObject() : registrationData
   const { name, email, college, year, amount, _id, createdAt } = regData
 
-  // Calculate time remaining for early bird offer (48 hours from registration)
-  const registrationTime = new Date(createdAt)
-  const offerEndTime = new Date(registrationTime.getTime() + (48 * 60 * 60 * 1000))
-  const timeRemaining = Math.max(0, Math.floor((offerEndTime - new Date()) / (1000 * 60 * 60)))
+  // Hardcoded to 48 hours for early bird offer
+  const timeRemaining = 48
 
   return {
-    subject: '⏰ Complete Your Registration - Early Bird Offer Active | ACD 2025',
+    subject: '⏰ Complete Your Registration - Early Bird Offer Active | ACD 2026',
     html: `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Complete Your Registration - ACD 2025</title>
+        <title>Complete Your Registration - ACD 2026</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
         <div style="width: 100%; background-color: #f3f4f6; padding: 20px 10px;">
@@ -262,7 +260,7 @@ const generatePendingPaymentEmail = (registrationData) => {
               <p style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px;">Dear <strong style="color: white;">${name}</strong>,</p>
               
               <p style="margin: 0 0 20px 0; color: #9ca3af; font-size: 14px; line-height: 1.6;">
-                Thank you for initiating your registration for <strong style="color: #c084fc;">ACD 2025</strong>. We're excited to have you join us for this premier community event.
+                Thank you for initiating your registration for <strong style="color: #c084fc;">ACD 2026</strong>. We're excited to have you join us for this premier community event.
               </p>
 
               <!-- Early Bird Offer Box -->
@@ -295,7 +293,7 @@ const generatePendingPaymentEmail = (registrationData) => {
                   <td width="50%" style="padding-right: 10px; vertical-align: top;">
                     <div style="background: #151515; border: 1px solid #374151; border-radius: 10px; padding: 20px; text-align: center;">
                       <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Regular Price</p>
-                      <div style="text-decoration: line-through; color: #6b7280; font-size: 24px; font-weight: bold;">₹${Math.floor((amount / 100) * 1.5)}</div>
+                      <div style="text-decoration: line-through; color: #6b7280; font-size: 24px; font-weight: bold;">₹249</div>
                     </div>
                   </td>
                   <td width="50%" style="padding-left: 10px; vertical-align: top;">
@@ -373,7 +371,7 @@ const generatePendingPaymentEmail = (registrationData) => {
                       <span style="color: #9ca3af; font-size: 12px;">Event:</span>
                     </td>
                     <td align="right" style="padding: 6px 0;">
-                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">ACD 2025 - ACES Community Day</span>
+                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">ACD 2026 - ACES Community Day</span>
                     </td>
                   </tr>
                   <tr>
@@ -425,7 +423,7 @@ const generatePendingPaymentEmail = (registrationData) => {
                 </p>
               </div>
               
-              <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">Thank you for choosing ACD 2025</p>
+              <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">Thank you for choosing ACD 2026</p>
               <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 12px; font-weight: 600;">ACES Event Organization Team</p>
               
               <p style="margin: 0; color: #6b7280; font-size: 11px;">This is an automated email. For support, contact mail@acesmitadt.com</p>
@@ -439,11 +437,11 @@ const generatePendingPaymentEmail = (registrationData) => {
       </html>
     `,
     text: `
-ACD 2025 - Complete Your Registration
+ACD 2026 - Complete Your Registration
 
 Dear ${name},
 
-Thank you for initiating your registration for ACD 2025. We're excited to have you join us for this premier community event.
+Thank you for initiating your registration for ACD 2026. We're excited to have you join us for this premier community event.
 
 ⚡ EARLY BIRD PRICING ACTIVE
 Complete your payment within ${timeRemaining} hours to secure this exclusive rate.
@@ -451,7 +449,7 @@ Complete your payment within ${timeRemaining} hours to secure this exclusive rat
 OFFER EXPIRES IN: ${timeRemaining} HOURS
 
 PRICING:
-Regular Price: ₹${Math.floor((amount / 100) * 1.5)} (crossed out)
+Regular Price: ₹249 (crossed out)
 Early Bird Price: ₹${amount / 100}
 YOU SAVE: ₹${Math.floor((amount / 100) * 0.5)}
 
@@ -463,7 +461,7 @@ Year: ${year}
 Amount to Pay: ₹${amount / 100}
 
 EVENT INFORMATION:
-Event: ACD 2025 - ACES Community Day
+Event: ACD 2026 - ACES Community Day
 Dates: January 28-29, 2026
 Time: 8:00 PM - 5:00 PM
 Venue: Urmilatai Karad Auditorium, MIT ADT Pune
@@ -478,7 +476,7 @@ Aayush: 9226750350
 Ishan: 9552448038
 Email: mail@acesmitadt.com
 
-Thank you for choosing ACD 2025
+Thank you for choosing ACD 2026
 ACES Event Organization Team
 
 This is an automated email. For support, contact mail@acesmitadt.com
@@ -531,7 +529,7 @@ export const sendConfirmationEmail = async (registrationData) => {
       }
     }
 
-    const fromAddress = 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
+    const fromAddress = 'ACD 2026 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
 
     // 1. Send Registration Success Email
     console.log('📧 Sending registration confirmation email...')
@@ -559,7 +557,7 @@ export const sendConfirmationEmail = async (registrationData) => {
       text: ticketEmail.text,
       attachments: [
         {
-          filename: `ACD-2025-Ticket-${ticketEmail.ticketNumber}.png`,
+          filename: `ACD-2026-Ticket-${ticketEmail.ticketNumber}.png`,
           content: ticketEmail.qrCodeBuffer,
           contentType: 'image/png',
           cid: 'ticket-qr-code'
@@ -591,7 +589,7 @@ export const sendConfirmationEmail = async (registrationData) => {
 export const sendTestEmail = async (email) => {
   try {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'Event Registration <noreply@event.com>',
+      from: 'ACD 2026 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>',
       to: email,
       subject: 'Test Email - Event Registration System',
       html: `
@@ -638,7 +636,7 @@ export const sendBulkNotification = async (recipients, subject, message) => {
           const personalizedMessage = message.replace(/\{name\}/g, recipient.name)
 
           const mailOptions = {
-            from: 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>',
+            from: 'ACD 2026 Notifications <' + (process.env.NOREPLY_EMAIL_USER || 'noreply@acesmitadt.com') + '>',
             to: recipient.email,
             subject: subject,
             html: `
@@ -657,7 +655,7 @@ export const sendBulkNotification = async (recipients, subject, message) => {
               <body>
                 <div class="container">
                   <div class="header">
-                    <h1>🎪 ACD 2025</h1>
+                    <h1>🎪 ACD 2026</h1>
                     <p>${subject}</p>
                   </div>
                   
@@ -667,7 +665,7 @@ export const sendBulkNotification = async (recipients, subject, message) => {
                     </div>
                     
                     <div class="footer">
-                      <p>Best regards,<br/>ACD 2025 Team</p>
+                      <p>Best regards,<br/>ACD 2026 Team</p>
                       <p><small>This is an automated message. Please do not reply to this email.</small></p>
                     </div>
                   </div>
@@ -675,10 +673,10 @@ export const sendBulkNotification = async (recipients, subject, message) => {
               </body>
               </html>
             `,
-            text: `${subject}\n\n${personalizedMessage}\n\nBest regards,\nACD 2025 Team`
+            text: `${subject}\n\n${personalizedMessage}\n\nBest regards,\nACD 2026 Team`
           }
 
-          const info = await transporter.sendMail(mailOptions)
+          const info = await noreplyTransporter.sendMail(mailOptions)
           console.log(`✅ Bulk email sent to ${recipient.email}:`, info.messageId)
           results.sent++
 
@@ -725,12 +723,36 @@ export const sendBulkNotification = async (recipients, subject, message) => {
 // Function to send pending payment reminder email
 export const sendPendingPaymentEmail = async (registrationData) => {
   try {
-    const fromAddress = 'ACD 2025 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
+    const fromAddress = 'ACD 2026 Notifications <' + (process.env.NOREPLY_EMAIL_USER || 'noreply@acesmitadt.com') + '>'
 
     console.log('📧 Sending pending payment reminder email...')
     const pendingEmail = generatePendingPaymentEmail(registrationData)
 
-    const info = await sendEmailWithRetry({
+    // Helper function to send with noreply transporter
+    const sendWithNoreply = async (mailOptions, maxRetries = 3) => {
+      let lastError;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`📧 Sending pending payment email (attempt ${attempt}/${maxRetries})...`);
+          const info = await noreplyTransporter.sendMail(mailOptions);
+          return info;
+        } catch (error) {
+          lastError = error;
+          console.error(`❌ Pending payment email attempt ${attempt} failed:`, error.message);
+          if (error.code === 'EAUTH' || error.responseCode === 535) {
+            throw error;
+          }
+          if (attempt < maxRetries) {
+            const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+        }
+      }
+      throw lastError;
+    };
+
+    const info = await sendWithNoreply({
       from: fromAddress,
       to: registrationData.email,
       subject: pendingEmail.subject,

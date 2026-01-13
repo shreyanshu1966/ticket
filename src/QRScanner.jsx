@@ -187,7 +187,7 @@ const QRScanner = () => {
       const result = await response.json()
 
       if (result.success) {
-        setSuccessMessage('Entry confirmed! Welcome to ACD 2025!')
+        setSuccessMessage('Entry confirmed! Welcome to ACD 2026!')
         setEntryConfirmed(true)
         // Clear data after 3 seconds for next scan
         setTimeout(() => {
@@ -275,7 +275,7 @@ const QRScanner = () => {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
-              🎫 ACD 2025 Entry Scanner
+              🎫 ACD 2026 Entry Scanner
             </h1>
             <button
               onClick={handleLogout}
@@ -517,7 +517,7 @@ const QRScanner = () => {
           {entryConfirmed && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
               <div className="text-4xl mb-3">🎉</div>
-              <h3 className="text-xl font-bold text-green-800 mb-2">Welcome to ACD 2025!</h3>
+              <h3 className="text-xl font-bold text-green-800 mb-2">Welcome to ACD 2026!</h3>
               <p className="text-green-600">Entry confirmed successfully</p>
             </div>
           )}

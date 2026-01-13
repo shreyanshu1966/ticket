@@ -87,18 +87,18 @@ const AdminNotifications = () => {
 
   const presetMessages = [
     {
-      subject: 'Event Reminder - ACD 2025',
-      message: 'Hi {name},\n\nThis is a friendly reminder about the upcoming ACD 2025 event. We\'re excited to see you there!\n\nEvent Details:\n- Date: [Event Date]\n- Time: [Event Time]\n- Venue: [Event Venue]\n\nPlease bring a valid ID and your registration confirmation.\n\nBest regards,\nACD 2025 Team',
+      subject: 'Event Reminder - ACD 2026',
+      message: 'Hi {name},\n\nThis is a friendly reminder about the upcoming ACD 2026 event. We\'re excited to see you there!\n\nEvent Details:\n- Date: [Event Date]\n- Time: [Event Time]\n- Venue: [Event Venue]\n\nPlease bring a valid ID and your registration confirmation.\n\nBest regards,\nACD 2026 Team',
       targetGroup: 'completed'
     },
     {
       subject: 'Payment Pending - Complete Your Registration',
-      message: 'Hi {name},\n\nWe noticed that your payment for ACD 2025 is still pending. Please complete your payment to secure your spot at the event.\n\nPayment Amount: ₹199\n\nIf you\'ve already made the payment, please ignore this message.\n\nBest regards,\nACD 2025 Team',
+      message: 'Hi {name},\n\nWe noticed that your payment for ACD 2026 is still pending. Please complete your payment to secure your spot at the event.\n\nPayment Amount: ₹199\n\nIf you\'ve already made the payment, please ignore this message.\n\nBest regards,\nACD 2026 Team',
       targetGroup: 'pending'
     },
     {
-      subject: 'Important Update - ACD 2025 Event',
-      message: 'Hi {name},\n\nWe have an important update regarding the ACD 2025 event.\n\n[Your update message here]\n\nFor any questions, please contact us at [contact email].\n\nBest regards,\nACD 2025 Team',
+      subject: 'Important Update - ACD 2026 Event',
+      message: 'Hi {name},\n\nWe have an important update regarding the ACD 2026 event.\n\n[Your update message here]\n\nFor any questions, please contact us at [contact email].\n\nBest regards,\nACD 2026 Team',
       targetGroup: 'all'
     }
   ]
