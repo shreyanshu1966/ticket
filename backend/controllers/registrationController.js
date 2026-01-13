@@ -394,8 +394,8 @@ export const verifyPayment = async (req, res) => {
     }
 
     if (approved) {
-      // Approve payment and send ticket
-      registration.paymentStatus = 'verified'
+      // Approve payment - mark as completed immediately
+      registration.paymentStatus = 'completed'
       registration.adminVerifiedAt = new Date()
       registration.adminVerifiedBy = req.admin?.username || 'admin'
       registration.paymentNotes = notes || ''
@@ -403,42 +403,42 @@ export const verifyPayment = async (req, res) => {
 
       await registration.save()
 
-      // Send ticket email
-      try {
-        const emailResult = await sendConfirmationEmail(registration)
-        if (emailResult.success) {
-          console.log('✅ Ticket email sent successfully')
+      // 🚀 Send ticket email in background (non-blocking)
+      // This allows the admin to get an immediate response
+      setImmediate(async () => {
+        try {
+          console.log(`📧 Sending ticket email in background for ${registration.email}...`)
+          const emailResult = await sendConfirmationEmail(registration)
 
-          // Update registration with ticket details
-          if (emailResult.ticketNumber) {
-            registration.ticketNumber = emailResult.ticketNumber
-            registration.qrCode = emailResult.qrCode
-            registration.ticketGenerated = true
-            registration.emailSentAt = new Date()
-            registration.paymentStatus = 'completed'
-            await registration.save()
+          if (emailResult.success) {
+            console.log(`✅ Ticket email sent successfully to ${registration.email}`)
+
+            // Update registration with ticket details
+            if (emailResult.ticketNumber) {
+              const updatedReg = await Registration.findById(registrationId)
+              if (updatedReg) {
+                updatedReg.ticketNumber = emailResult.ticketNumber
+                updatedReg.qrCode = emailResult.qrCode
+                updatedReg.ticketGenerated = true
+                updatedReg.emailSentAt = new Date()
+                await updatedReg.save()
+                console.log(`✅ Ticket details updated for ${registration.email}`)
+              }
+            }
+          } else {
+            console.error(`❌ Failed to send ticket email to ${registration.email}:`, emailResult.error)
           }
-
-          res.json({
-            success: true,
-            message: 'Payment verified and ticket sent successfully',
-            data: registration
-          })
-        } else {
-          res.json({
-            success: true,
-            message: 'Payment verified but failed to send ticket email. Please try sending manually.',
-            data: registration
-          })
+        } catch (emailError) {
+          console.error(`❌ Background email error for ${registration.email}:`, emailError)
         }
-      } catch (emailError) {
-        console.error('❌ Failed to send ticket email:', emailError)
-        res.json({
-          success: true,
-          message: 'Payment verified but failed to send ticket email. Please try sending manually.',
-          data: registration
-        })
-      }
+      })
+
+      // Return immediately without waiting for email
+      res.json({
+        success: true,
+        message: 'Payment verified successfully. Ticket email is being sent in background.',
+        data: registration
+      })
 
     } else {
       // Reject payment

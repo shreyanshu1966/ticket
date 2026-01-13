@@ -91,12 +91,14 @@ export const getAllRegistrations = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit)
 
-    // Get registrations
+    // Get registrations - EXCLUDE heavy fields like paymentScreenshot
+    // This dramatically improves performance as screenshots can be several MB each
     const registrations = await Registration.find(filter)
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .select('-__v')
+      .select('-__v -paymentScreenshot') // Exclude version and screenshot
+      .lean() // Convert to plain JS objects for better performance
 
     // Get total count for pagination
     const total = await Registration.countDocuments(filter)
@@ -201,19 +203,33 @@ export const exportRegistrations = async (req, res) => {
 
     const registrations = await Registration.find(filter)
       .sort({ createdAt: -1 })
-      .select('name email phone college year paymentStatus createdAt')
 
-    // Convert to CSV format data
+    // Convert to CSV format data with comprehensive fields
     const csvData = registrations.map(reg => ({
+      'Ticket Number': reg.ticketNumber || 'N/A',
       Name: reg.name,
       Email: reg.email,
       Phone: reg.phone,
       College: reg.college,
       Year: reg.year,
       'Payment Status': reg.paymentStatus,
-      Amount: reg.amount,
-      'Payment Status': reg.paymentStatus || 'N/A',
-      'Registration Date': reg.createdAt.toLocaleDateString()
+      'Payment Method': reg.paymentMethod || 'N/A',
+      'UPI Transaction ID': reg.upiTransactionId || 'N/A',
+      'Amount (₹)': reg.amount ? (reg.amount / 100).toFixed(2) : '0.00',
+      'Registration Date': reg.createdAt ? new Date(reg.createdAt).toLocaleString('en-IN') : 'N/A',
+      'Payment Submitted At': reg.paymentSubmittedAt ? new Date(reg.paymentSubmittedAt).toLocaleString('en-IN') : 'N/A',
+      'Admin Verified At': reg.adminVerifiedAt ? new Date(reg.adminVerifiedAt).toLocaleString('en-IN') : 'N/A',
+      'Admin Verified By': reg.adminVerifiedBy || 'N/A',
+      'Payment Date': reg.paymentDate ? new Date(reg.paymentDate).toLocaleString('en-IN') : 'N/A',
+      'Ticket Generated': reg.ticketGenerated ? 'Yes' : 'No',
+      'Email Sent At': reg.emailSentAt ? new Date(reg.emailSentAt).toLocaleString('en-IN') : 'N/A',
+      'Is Scanned': reg.isScanned ? 'Yes' : 'No',
+      'Scanned At': reg.scannedAt ? new Date(reg.scannedAt).toLocaleString('en-IN') : 'N/A',
+      'Entry Confirmed': reg.entryConfirmed ? 'Yes' : 'No',
+      'Resend Count': reg.resendCount || 0,
+      'Last Resent At': reg.lastResentAt ? new Date(reg.lastResentAt).toLocaleString('en-IN') : 'N/A',
+      'Payment Notes': reg.paymentNotes || 'N/A',
+      'Rejection Reason': reg.paymentRejectionReason || 'N/A'
     }))
 
     res.json({

@@ -126,6 +126,13 @@ const registrationSchema = new mongoose.Schema({
   timestamps: true
 })
 
+// Create indexes for better query performance
+registrationSchema.index({ paymentStatus: 1, createdAt: -1 })
+registrationSchema.index({ year: 1, createdAt: -1 })
+registrationSchema.index({ email: 1 })
+registrationSchema.index({ name: 'text', email: 'text', college: 'text' })
+registrationSchema.index({ createdAt: -1 })
+
 const Registration = mongoose.model('Registration', registrationSchema)
 
 export default Registration

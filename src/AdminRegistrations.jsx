@@ -72,8 +72,8 @@ const AdminRegistrations = () => {
       const data = await response.json()
       if (data.success) {
         // Update local state
-        setRegistrations(prev => 
-          prev.map(reg => 
+        setRegistrations(prev =>
+          prev.map(reg =>
             reg._id === id ? { ...reg, paymentStatus: newStatus } : reg
           )
         )
@@ -92,18 +92,18 @@ const AdminRegistrations = () => {
       const response = await fetch(buildApiUrl(`/api/registrations/${id}/verify`), {
         method: 'PATCH',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ 
-          approved, 
-          notes, 
-          rejectionReason 
+        body: JSON.stringify({
+          approved,
+          notes,
+          rejectionReason
         })
       })
 
       const data = await response.json()
       if (data.success) {
         // Update local state
-        setRegistrations(prev => 
-          prev.map(reg => 
+        setRegistrations(prev =>
+          prev.map(reg =>
             reg._id === id ? data.data : reg
           )
         )
@@ -149,9 +149,10 @@ const AdminRegistrations = () => {
   }
 
   const handleFilterChange = (e) => {
+    const { name, value } = e.target
     setFilters({
       ...filters,
-      [e.target.name]: e.target.value,
+      [name]: value,
       page: 1 // Reset to first page when filters change
     })
   }
@@ -163,8 +164,13 @@ const AdminRegistrations = () => {
     })
   }
 
+  // Debounce search to avoid excessive API calls
   useEffect(() => {
-    fetchRegistrations()
+    const timeoutId = setTimeout(() => {
+      fetchRegistrations()
+    }, filters.search ? 500 : 0) // 500ms delay for search, immediate for other filters
+
+    return () => clearTimeout(timeoutId)
   }, [filters])
 
   const getStatusColor = (status) => {
@@ -293,8 +299,54 @@ const AdminRegistrations = () => {
         {/* Registrations Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Registration Details
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Education
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-24"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-32"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-20"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-6 bg-gray-200 rounded-full animate-pulse w-24 mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-16"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-8 bg-gray-100 rounded animate-pulse"></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -427,7 +479,7 @@ const AdminRegistrations = () => {
           )}
         </div>
       </div>
-      
+
       {/* Payment Verification Modal */}
       <PaymentVerificationModal
         registration={selectedRegistration}
