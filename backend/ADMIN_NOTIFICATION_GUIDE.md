@@ -140,8 +140,8 @@ This is a reminder that ACD 2026 is coming up soon!
 
 Event Details:
 📅 Date: January 28-29, 2026
-⏰ Time: 8:00 PM - 5:00 PM
-📍 Venue: Urmilatai Karad Auditorium, MIT ADT Pune
+⏰ Time: 8:00 AM - 5:00 PM
+📍 Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
 
 Please bring your e-ticket and a valid ID.
 

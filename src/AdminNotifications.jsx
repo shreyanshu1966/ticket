@@ -23,7 +23,7 @@ const AdminNotifications = () => {
 
   const handleSendNotification = async (e) => {
     e.preventDefault()
-    
+
     if (!notification.subject.trim() || !notification.message.trim()) {
       setError('Subject and message are required')
       return
@@ -58,6 +58,82 @@ const AdminNotifications = () => {
       }
     } catch (err) {
       setError('Error sending notification')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendTimingCorrection = async (targetGroup = 'all') => {
+    if (!confirm(`Are you sure you want to send timing correction emails to ${targetGroup === 'all' ? 'ALL registered users' : targetGroup + ' users'}? This will notify them about the corrected event timing.`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(buildApiUrl('/api/admin/notifications/timing-correction'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ targetGroup })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken')
+        navigate('/admin/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`✅ ${data.message} - Timing correction emails sent successfully!`)
+        if (data.data.failed > 0) {
+          setError(`Note: ${data.data.failed} emails failed to send. Check server logs for details.`)
+        }
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error sending timing correction emails')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResendTickets = async (targetGroup = 'completed') => {
+    if (!confirm(`Are you sure you want to resend tickets to ${targetGroup === 'completed' ? 'ALL users with completed payments' : targetGroup + ' users'}? This will send registration confirmation and ticket emails.`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(buildApiUrl('/api/admin/notifications/resend-tickets'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ targetGroup })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken')
+        navigate('/admin/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`✅ ${data.message} - Tickets resent successfully!`)
+        if (data.data.failed > 0) {
+          setError(`Note: ${data.data.failed} emails failed to send. Check server logs for details.`)
+        }
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error resending tickets')
     } finally {
       setLoading(false)
     }
@@ -139,12 +215,162 @@ const AdminNotifications = () => {
           </div>
         )}
 
+        {/* Timing Correction Section */}
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-bold text-yellow-900 mb-2">
+                ⏰ Event Timing Correction
+              </h3>
+              <p className="text-sm text-yellow-800 mb-4">
+                Send correction emails to users who received emails with incorrect event timing.
+                The email will clearly show the corrected timing: <strong>8:00 AM - 5:00 PM</strong> (was incorrectly shown as 8:00 PM - 5:00 PM).
+              </p>
+
+              <div className="bg-white bg-opacity-60 rounded-md p-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Email will include:</h4>
+                <ul className="text-xs text-gray-700 space-y-1">
+                  <li>✓ Clear comparison of incorrect vs correct timing</li>
+                  <li>✓ Full event details with corrected timing highlighted</li>
+                  <li>✓ Professional apology message</li>
+                  <li>✓ Contact information for support</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleSendTimingCorrection('all')}
+                  disabled={loading}
+                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-6 py-2.5 rounded-md font-medium transition-colors shadow-md flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Send to All Users
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleSendTimingCorrection('completed')}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Completed Only
+                </button>
+
+                <button
+                  onClick={() => handleSendTimingCorrection('pending')}
+                  disabled={loading}
+                  className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Pending Only
+                </button>
+              </div>
+
+              <p className="text-xs text-yellow-700 mt-3 italic">
+                💡 Tip: Test with a small group first before sending to all users
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Resend Tickets Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              </svg>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-bold text-blue-900 mb-2">
+                🎫 Resend Tickets
+              </h3>
+              <p className="text-sm text-blue-800 mb-4">
+                Resend registration confirmation and ticket emails to users who have completed payment.
+                Useful if original emails were lost or had delivery issues.
+              </p>
+
+              <div className="bg-white bg-opacity-60 rounded-md p-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Each user will receive:</h4>
+                <ul className="text-xs text-gray-700 space-y-1">
+                  <li>✓ Registration confirmation email</li>
+                  <li>✓ E-Ticket with QR code</li>
+                  <li>✓ Event details and venue information</li>
+                  <li>✓ Contact information for support</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleResendTickets('completed')}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2.5 rounded-md font-medium transition-colors shadow-md flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                      </svg>
+                      Resend to All Completed
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleResendTickets('ticket_sent')}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Already Sent Only
+                </button>
+
+                <button
+                  onClick={() => handleResendTickets('no_ticket')}
+                  disabled={loading}
+                  className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Not Sent Only
+                </button>
+              </div>
+
+              <p className="text-xs text-blue-700 mt-3 italic">
+                💡 Tip: Use "Not Sent Only" to send tickets to users who haven't received them yet
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form */}
           <div className="lg:col-span-2">
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Compose Notification</h2>
-              
+
               <form onSubmit={handleSendNotification} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -226,7 +452,7 @@ const AdminNotifications = () => {
           <div>
             <div className="bg-white shadow rounded-lg p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Templates</h3>
-              
+
               <div className="space-y-3">
                 {presetMessages.map((preset, index) => (
                   <div key={index} className="border border-gray-200 rounded-md p-3">
@@ -276,7 +502,7 @@ const AdminNotifications = () => {
               </h3>
               <div className="mt-2 text-sm text-blue-700">
                 <p>
-                  Emails will be sent to users based on their registration status. 
+                  Emails will be sent to users based on their registration status.
                   Please ensure your email configuration is properly set up in the backend environment variables.
                 </p>
               </div>

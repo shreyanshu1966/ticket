@@ -7,7 +7,9 @@ import {
   updateRegistrationStatus,
   deleteRegistration,
   exportRegistrations,
-  sendBulkNotification
+  sendBulkNotification,
+  sendTimingCorrection,
+  resendTickets
 } from '../controllers/adminController.js'
 
 const router = express.Router()
@@ -49,5 +51,11 @@ router.post('/notifications/bulk', [
     .isIn(['all', 'completed', 'pending', 'failed'])
     .withMessage('Target group must be all, completed, pending, or failed')
 ], sendBulkNotification)
+
+// Timing correction emails
+router.post('/notifications/timing-correction', sendTimingCorrection)
+
+// Resend tickets
+router.post('/notifications/resend-tickets', resendTickets)
 
 export default router

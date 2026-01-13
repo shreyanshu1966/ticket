@@ -54,8 +54,8 @@ const generateRegistrationSuccessEmail = (registrationData) => {
               <h3>🎪 Event Information</h3>
               <p><strong>Event:</strong> ACD 2026</p>
               <p><strong>Dates:</strong> January 28-29, 2026</p>
-              <p><strong>Venue:</strong> Urmilatai Karad Auditorium, MIT ADT Pune</p>
-              <p><strong>Time:</strong> 8:00 PM to 5:00 PM</p>
+              <p><strong>Venue:</strong> Urmila Tai Karad Auditorium, MIT ADT Pune</p>
+              <p><strong>Time:</strong> 8:00 AM - 5:00 PM</p>
             </div>
             
             <div class="details">
@@ -122,8 +122,8 @@ Your registration has been confirmed! Here are your details:
 EVENT INFORMATION:
 - Event: ACD 2026
 - Dates: January 28-29, 2026
-- Venue: Urmilatai Karad Auditorium, MIT ADT Pune
-- Time: 8:00 PM to 5:00 PM
+- Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
+- Time: 8:00 AM - 5:00 PM
 
 REGISTRATION DETAILS:
 Registration ID: ${_id}
@@ -147,10 +147,12 @@ Event Organization Team
 const generateTicketEmail = async (registrationData) => {
   // Convert Mongoose document to plain object if needed
   const regData = registrationData.toObject ? registrationData.toObject() : registrationData
-  const { name, email, _id, college, year, amount } = regData
+  const { name, email, _id, college, year, amount, ticketNumber: existingTicketNumber } = regData
 
-  // Generate ticket number and QR code buffer
-  const ticketNumber = generateTicketNumber()
+  // Use existing ticket number if available, otherwise generate new one
+  const ticketNumber = existingTicketNumber || generateTicketNumber()
+
+  // Generate QR code buffer
   const qrCodeBuffer = await generateQRCodeBuffer({
     ticketNumber,
     registrationId: _id,
@@ -197,8 +199,8 @@ Ticket Number: ${ticketNumber}
 Name: ${name}
 Event: ACD 2026 - ACES Community Day
 Date: January 28-29, 2026
-Time: 8:00 PM to 5:00 PM
-Location: Urmilatai Karad Auditorium, MIT ADT Pune
+Time: 8:00 AM - 5:00 PM
+Location: Urmila Tai Karad Auditorium, MIT ADT Pune
 
 Please show this ticket at the venue entry.
 
@@ -387,7 +389,7 @@ const generatePendingPaymentEmail = (registrationData) => {
                       <span style="color: #9ca3af; font-size: 12px;">Time:</span>
                     </td>
                     <td align="right" style="padding: 6px 0;">
-                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">8:00 PM - 5:00 PM</span>
+                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">8:00 AM - 5:00 PM</span>
                     </td>
                   </tr>
                   <tr>
@@ -395,7 +397,7 @@ const generatePendingPaymentEmail = (registrationData) => {
                       <span style="color: #9ca3af; font-size: 12px;">Venue:</span>
                     </td>
                     <td align="right" style="padding: 6px 0;">
-                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">Urmilatai Karad Auditorium, MIT ADT Pune</span>
+                      <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">Urmila Tai Karad Auditorium, MIT ADT Pune</span>
                     </td>
                   </tr>
                 </table>
@@ -463,8 +465,8 @@ Amount to Pay: ₹${amount / 100}
 EVENT INFORMATION:
 Event: ACD 2026 - ACES Community Day
 Dates: January 28-29, 2026
-Time: 8:00 PM - 5:00 PM
-Venue: Urmilatai Karad Auditorium, MIT ADT Pune
+Time: 8:00 AM - 5:00 PM
+Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
 
 ⚠️ IMPORTANT:
 Your registration will be confirmed only after successful payment completion. Early bird pricing is subject to availability and time constraints.
@@ -519,14 +521,8 @@ export const sendConfirmationEmail = async (registrationData) => {
   try {
     // Check if emails were already sent for this registration
     if (registrationData.ticketGenerated && registrationData.emailSentAt) {
-      console.log('⚠️ Emails already sent for registration:', registrationData._id)
-      return {
-        success: true,
-        message: 'Emails already sent',
-        ticketNumber: registrationData.ticketNumber,
-        qrCode: registrationData.qrCode,
-        alreadySent: true
-      }
+      console.log('⚠️ Resending emails for registration:', registrationData._id, '(using existing ticket number)')
+      // Continue to resend with the same ticket number instead of blocking
     }
 
     const fromAddress = 'ACD 2026 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
@@ -771,3 +767,213 @@ export const sendPendingPaymentEmail = async (registrationData) => {
     return { success: false, error: error.message }
   }
 }
+
+// Function to send timing correction email
+export const sendTimingCorrectionEmail = async (registrationData) => {
+  try {
+    const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+    const { name, email } = regData
+    const fromAddress = 'ACD 2026 Notifications <' + (process.env.NOREPLY_EMAIL_USER || 'noreply@acesmitadt.com') + '>'
+
+    console.log('📧 Sending timing correction email...')
+
+    const mailOptions = {
+      from: fromAddress,
+      to: email,
+      subject: '⚠️ Important Update: Event Timing Correction - ACD 2026',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Event Timing Correction - ACD 2026</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+          <div style="width: 100%; background-color: #f3f4f6; padding: 20px 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 0 auto; background-color: #1a1a1a; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); color: white; border: 1px solid #374151;">
+              
+              <!-- Header Section -->
+              <div style="padding: 20px; background-color: #1a1a1a;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td width="50" valign="middle">
+                      <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 10px; padding: 2px;">
+                        <div style="background: #1a1a1a; width: 100%; height: 100%; border-radius: 8px; text-align: center; line-height: 36px;">
+                          <span style="font-size: 24px;">⚠️</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td valign="middle" style="padding-left: 12px;">
+                      <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: white; line-height: 1.2;">Important Update</h1>
+                      <p style="margin: 0; color: #fbbf24; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Event Timing Correction</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Main Content -->
+              <div style="padding: 30px 20px; background-color: #1a1a1a; border-top: 1px solid #374151;">
+                
+                <!-- Greeting -->
+                <p style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px;">Dear <strong style="color: white;">${name}</strong>,</p>
+                
+                <p style="margin: 0 0 20px 0; color: #9ca3af; font-size: 14px; line-height: 1.6;">
+                  We're writing to inform you of an important correction regarding the event timing for <strong style="color: #c084fc;">ACD 2026</strong>.
+                </p>
+
+                <!-- Correction Notice Box -->
+                <div style="background: rgba(234, 179, 8, 0.1); border: 2px solid #fbbf24; border-radius: 12px; padding: 20px; margin: 25px 0;">
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="vertical-align: top; width: 40px;">
+                        <div style="width: 36px; height: 36px; background: rgba(234, 179, 8, 0.2); border-radius: 50%; text-align: center; line-height: 36px; font-size: 20px;">⏰</div>
+                      </td>
+                      <td style="padding-left: 15px;">
+                        <h3 style="margin: 0 0 8px 0; color: #fbbf24; font-size: 16px; font-weight: 600;">Timing Correction</h3>
+                        <p style="margin: 0; color: #d1d5db; font-size: 13px; line-height: 1.5;">
+                          Our previous email contained an error in the event timing. Please note the <strong style="color: #fbbf24;">corrected timing</strong> below.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Timing Comparison -->
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 25px 0;">
+                  <tr>
+                    <td width="50%" style="padding-right: 10px; vertical-align: top;">
+                      <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 20px; text-align: center;">
+                        <p style="margin: 0 0 8px 0; color: #ef4444; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Incorrect (Previous)</p>
+                        <div style="text-decoration: line-through; color: #ef4444; font-size: 20px; font-weight: bold;">8:00 PM - 5:00 PM</div>
+                      </div>
+                    </td>
+                    <td width="50%" style="padding-left: 10px; vertical-align: top;">
+                      <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 2px solid #22c55e; border-radius: 10px; padding: 20px; text-align: center;">
+                        <p style="margin: 0 0 8px 0; color: #4ade80; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">✓ Correct Timing</p>
+                        <div style="color: #22c55e; font-size: 24px; font-weight: bold;">8:00 AM - 5:00 PM</div>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Event Information -->
+                <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 10px; padding: 20px; margin: 25px 0;">
+                  <h3 style="margin: 0 0 16px 0; color: #60a5fa; font-size: 15px; font-weight: 600;">📅 Confirmed Event Details</h3>
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="padding: 6px 0;">
+                        <span style="color: #9ca3af; font-size: 12px;">Event:</span>
+                      </td>
+                      <td align="right" style="padding: 6px 0;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">ACD 2026 - ACES Community Day</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 0;">
+                        <span style="color: #9ca3af; font-size: 12px;">Dates:</span>
+                      </td>
+                      <td align="right" style="padding: 6px 0;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">January 28-29, 2026</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 0;">
+                        <span style="color: #9ca3af; font-size: 12px;">Time:</span>
+                      </td>
+                      <td align="right" style="padding: 6px 0;">
+                        <span style="color: #22c55e; font-size: 14px; font-weight: 700;">8:00 AM - 5:00 PM</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 0;">
+                        <span style="color: #9ca3af; font-size: 12px;">Venue:</span>
+                      </td>
+                      <td align="right" style="padding: 6px 0;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">Urmila Tai Karad Auditorium, MIT ADT Pune</span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Apology Note -->
+                <div style="background: rgba(168, 85, 247, 0.1); border-left: 3px solid #a855f7; border-radius: 8px; padding: 16px; margin: 25px 0;">
+                  <p style="margin: 0; color: #d1d5db; font-size: 13px; line-height: 1.6;">
+                    We sincerely apologize for any inconvenience this may have caused. Please make note of the <strong style="color: #c084fc;">correct timing: 8:00 AM - 5:00 PM</strong>. We look forward to seeing you at the event!
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- Footer -->
+              <div style="background: #151515; padding: 25px 20px; text-align: center; border-top: 1px solid #374151;">
+                <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 8px; padding: 16px; margin: 0 0 20px 0;">
+                  <p style="margin: 0 0 10px 0; color: #a5b4fc; font-size: 12px; font-weight: 600;">📞 Need Assistance?</p>
+                  <p style="margin: 5px 0; color: #d1d5db; font-size: 12px;">
+                    <strong>Aayush:</strong> <a href="tel:+919226750350" style="color: #818cf8; text-decoration: none;">9226750350</a>
+                  </p>
+                  <p style="margin: 5px 0; color: #d1d5db; font-size: 12px;">
+                    <strong>Ishan:</strong> <a href="tel:+919552448038" style="color: #818cf8; text-decoration: none;">9552448038</a>
+                  </p>
+                </div>
+                
+                <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">Thank you for your understanding</p>
+                <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 12px; font-weight: 600;">ACES Event Organization Team</p>
+                
+                <p style="margin: 0; color: #6b7280; font-size: 11px;">This is an automated email. For support, contact mail@acesmitadt.com</p>
+              </div>
+
+              <!-- Bottom Color Bar -->
+              <div style="height: 5px; background: linear-gradient(90deg, #9333ea, #2563eb); width: 100%;"></div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+ACD 2026 - Important Event Timing Correction
+
+Dear ${name},
+
+We're writing to inform you of an important correction regarding the event timing for ACD 2026.
+
+⚠️ TIMING CORRECTION
+
+Our previous email contained an error in the event timing. Please note the corrected timing below.
+
+INCORRECT (Previous): 8:00 PM - 5:00 PM (crossed out)
+✓ CORRECT TIMING: 8:00 AM - 5:00 PM
+
+CONFIRMED EVENT DETAILS:
+Event: ACD 2026 - ACES Community Day
+Dates: January 28-29, 2026
+Time: 8:00 AM - 5:00 PM
+Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
+
+We sincerely apologize for any inconvenience this may have caused. Please make note of the correct timing: 8:00 AM - 5:00 PM. We look forward to seeing you at the event!
+
+NEED ASSISTANCE?
+Aayush: 9226750350
+Ishan: 9552448038
+Email: mail@acesmitadt.com
+
+Thank you for your understanding
+ACES Event Organization Team
+
+This is an automated email. For support, contact mail@acesmitadt.com
+      `
+    }
+
+    const info = await noreplyTransporter.sendMail(mailOptions)
+    console.log('✅ Timing correction email sent:', info.messageId)
+
+    return {
+      success: true,
+      messageId: info.messageId
+    }
+  } catch (error) {
+    console.error('❌ Timing correction email failed:', error)
+    return { success: false, error: error.message }
+  }
+}
+

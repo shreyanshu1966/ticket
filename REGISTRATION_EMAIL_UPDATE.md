@@ -14,7 +14,7 @@ All registration and ticket email templates have been updated with the new event
 **New Information:**
 - **Dates:** January 28-29, 2026
 - **Time:** 8:00 AM to 5:00 PM
-- **Venue:** Urmilatai Karad Auditorium, MIT ADT Pune
+- **Venue:** Urmila Tai Karad Auditorium, MIT ADT Pune
 
 ### Files Updated
 
@@ -28,7 +28,7 @@ All registration and ticket email templates have been updated with the new event
    - Already had correct information
    - Event dates: January 28-29, 2026 (line 97)
    - Event time: 8:00 AM - 5:00 PM (line 98)
-   - Venue: Urmilatai Karad Auditorium, MIT ADT Pune (line 197)
+   - Venue: Urmila Tai Karad Auditorium, MIT ADT Pune (line 197)
 
 3. **backend/sample-email.html**
    - Updated event information section

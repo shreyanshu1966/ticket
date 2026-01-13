@@ -1,6 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
-import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail } from '../services/emailService.js'
+import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendConfirmationEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -345,6 +345,188 @@ export const sendBulkNotification = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error sending bulk notification: ' + error.message
+    })
+  }
+}
+
+// Send timing correction emails
+export const sendTimingCorrection = async (req, res) => {
+  try {
+    const { targetGroup = 'all' } = req.body
+
+    // Build filter based on target group
+    const filter = {}
+    if (targetGroup === 'completed') filter.paymentStatus = 'completed'
+    if (targetGroup === 'pending') filter.paymentStatus = 'pending'
+    if (targetGroup === 'all') {
+      // Send to everyone who has registered
+      filter.$or = [
+        { paymentStatus: 'completed' },
+        { paymentStatus: 'pending' },
+        { paymentStatus: 'paid_awaiting_verification' }
+      ]
+    }
+
+    const registrations = await Registration.find(filter).select('name email')
+
+    if (registrations.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No recipients found for the selected target group',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup
+        }
+      })
+    }
+
+    console.log(`📧 Sending timing correction emails to ${registrations.length} recipients...`)
+
+    let sent = 0
+    let failed = 0
+    const errors = []
+
+    // Send timing correction email to each recipient
+    for (const registration of registrations) {
+      try {
+        const result = await sendTimingCorrectionEmail(registration)
+        if (result.success) {
+          sent++
+          console.log(`✅ Timing correction email sent to ${registration.email}`)
+        } else {
+          failed++
+          errors.push({
+            email: registration.email,
+            error: result.error
+          })
+          console.error(`❌ Failed to send to ${registration.email}:`, result.error)
+        }
+
+        // Small delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        failed++
+        errors.push({
+          email: registration.email,
+          error: error.message
+        })
+        console.error(`❌ Error sending to ${registration.email}:`, error.message)
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Timing correction emails sent! ${sent} emails sent${failed > 0 ? `, ${failed} failed` : ''}`,
+      data: {
+        sent,
+        failed,
+        total: registrations.length,
+        targetGroup,
+        subject: '⚠️ Important Update: Event Timing Correction - ACD 2026',
+        errors: errors
+      }
+    })
+  } catch (error) {
+    console.error('Error sending timing correction emails:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error sending timing correction emails: ' + error.message
+    })
+  }
+}
+
+// Resend tickets to users
+export const resendTickets = async (req, res) => {
+  try {
+    const { targetGroup = 'completed' } = req.body
+
+    // Build filter - only send to users with completed payments
+    const filter = { paymentStatus: 'completed' }
+
+    // Optional: filter by specific group if needed
+    if (targetGroup === 'ticket_sent') {
+      filter.ticketGenerated = true
+    } else if (targetGroup === 'no_ticket') {
+      filter.ticketGenerated = false
+    }
+
+    const registrations = await Registration.find(filter)
+
+    if (registrations.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No recipients found for the selected target group',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup
+        }
+      })
+    }
+
+    console.log(`🎫 Resending tickets to ${registrations.length} recipients...`)
+
+    let sent = 0
+    let failed = 0
+    const errors = []
+
+    // Resend tickets to each recipient
+    for (const registration of registrations) {
+      try {
+        const result = await sendConfirmationEmail(registration)
+        if (result.success) {
+          sent++
+          console.log(`✅ Ticket resent to ${registration.email}`)
+
+          // Update ticket generation status if not already set
+          if (!registration.ticketGenerated) {
+            registration.ticketGenerated = true
+            registration.ticketNumber = result.ticketNumber
+            registration.qrCode = result.qrCode
+            registration.emailSentAt = new Date()
+            await registration.save()
+          }
+        } else {
+          failed++
+          errors.push({
+            email: registration.email,
+            error: result.error
+          })
+          console.error(`❌ Failed to resend ticket to ${registration.email}:`, result.error)
+        }
+
+        // Small delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        failed++
+        errors.push({
+          email: registration.email,
+          error: error.message
+        })
+        console.error(`❌ Error resending ticket to ${registration.email}:`, error.message)
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Tickets resent! ${sent} emails sent${failed > 0 ? `, ${failed} failed` : ''}`,
+      data: {
+        sent,
+        failed,
+        total: registrations.length,
+        targetGroup,
+        subject: 'Your E-Ticket - ACD 2026',
+        errors: errors
+      }
+    })
+  } catch (error) {
+    console.error('Error resending tickets:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error resending tickets: ' + error.message
     })
   }
 }
