@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { buildApiUrl, PAYMENT_CONFIG } from './config.js'
 
 function PaymentForm({ registrationData, onPaymentComplete }) {
@@ -9,6 +9,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
   const [error, setError] = useState('')
   const [showInstructions, setShowInstructions] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const fileInputRef = useRef(null)
 
   // UPI payment details from config
   const { UPI_ID, AMOUNT: PAYMENT_AMOUNT, EVENT_NAME } = PAYMENT_CONFIG
@@ -31,12 +32,18 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
     // Check file type
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file')
+      setScreenshot(null)
+      setPreviewUrl(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size must be less than 5MB')
+      setScreenshot(null)
+      setPreviewUrl(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
@@ -350,6 +357,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
               Payment Screenshot *
             </label>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleFileChange}
