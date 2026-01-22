@@ -111,7 +111,8 @@ export const getAllRegistrations = async (req, res) => {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { college: { $regex: search, $options: 'i' } }
+        { college: { $regex: search, $options: 'i' } },
+        { upiTransactionId: { $regex: search, $options: 'i' } }
       ]
     }
 

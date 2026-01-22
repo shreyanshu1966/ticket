@@ -265,7 +265,7 @@ const AdminRegistrations = () => {
                 name="search"
                 value={filters.search}
                 onChange={handleFilterChange}
-                placeholder="Name, email, or college..."
+                placeholder="Name, email, college, or UTR..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
