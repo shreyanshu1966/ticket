@@ -1154,7 +1154,11 @@ This is an automated email. For support, contact mail@acesmitadt.com
 // Friend OTP Email Template
 export const sendFriendOTPEmail = async (email, userName, otp) => {
   try {
+    console.log('📧 sendFriendOTPEmail called')
+    console.log(`To: ${email}, User: ${userName}, OTP: ${otp}`)
+    
     const fromAddress = 'ACD 2026 OTP <' + (process.env.OTP_EMAIL_USER || 'no.reply@acesmitadt.com') + '>'
+    console.log(`From: ${fromAddress}`)
     
     const mailOptions = {
       from: fromAddress,
@@ -1243,10 +1247,18 @@ ACD 2026 Team
       `
     }
 
+    console.log('📤 Sending OTP email via otpTransporter...')
     const info = await otpTransporter.sendMail(mailOptions)
+    console.log('✅ OTP email sent successfully! Message ID:', info.messageId)
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('❌ Friend OTP email failed:', error)
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      response: error.response
+    })
     return { success: false, error: error.message }
   }
 }
@@ -1394,3 +1406,356 @@ For support, contact us at mail@acesmitadt.com
   }
 }
 
+// Bring Friend Offer Promotion Email Template
+const generateBringFriendPromotionEmail = (registrationData) => {
+  const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+  const { name, email } = regData
+
+  return {
+    subject: '� Exclusive Offer - Bring Your Friend & Save! | ACD 2026',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bring Your Friend - ACD 2026</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+        <div style="width: 100%; background-color: #f3f4f6; padding: 20px 10px;">
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 0 auto; background-color: #1a1a1a; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); color: white; border: 1px solid #374151;">
+            
+            <!-- Header Section -->
+            <div style="padding: 20px; background-color: #1a1a1a;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="50" valign="middle">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 10px; padding: 2px;">
+                      <div style="background: #1a1a1a; width: 100%; height: 100%; border-radius: 8px; text-align: center; line-height: 36px;">
+                        <span style="font-size: 24px;">🎁</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td valign="middle" style="padding-left: 12px;">
+                    <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: white; line-height: 1.2;">ACD 2026</h1>
+                    <p style="margin: 0; color: #a855f7; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Bring Your Friend Offer</p>
+                  </td>
+                  <td align="right" valign="top">
+                    <span style="background-color: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 20px; padding: 4px 10px; color: #ec4899; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; display: inline-block; white-space: nowrap;">Exclusive</span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Main Content -->
+            <div style="padding: 30px 20px; background-color: #1a1a1a; border-top: 1px solid #374151;">
+              
+              <!-- Greeting -->
+              <p style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px;">Dear <strong style="color: white;">${name}</strong>,</p>
+              
+              <p style="margin: 0 0 20px 0; color: #9ca3af; font-size: 14px; line-height: 1.6;">
+                As a valued registered attendee of <strong style="color: #c084fc;">ACD 2026</strong>, we're excited to offer you an exclusive opportunity to bring your friends at a special discounted rate!
+              </p>
+
+              <!-- Offer Highlight Box -->
+              <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border: 2px solid #ec4899; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+                <div style="background: rgba(236, 72, 153, 0.15); display: inline-block; padding: 8px 16px; border-radius: 20px; margin-bottom: 15px;">
+                  <span style="color: #ec4899; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">🎊 Special Friend Offer</span>
+                </div>
+                <h2 style="margin: 0 0 15px 0; color: white; font-size: 24px; font-weight: bold;">Help Your Friends Save ₹100!</h2>
+                <p style="margin: 0; color: #d1d5db; font-size: 14px;">Your friends can join ACD 2026 at an exclusive discounted price</p>
+              </div>
+
+              <!-- Pricing Comparison -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 25px 0;">
+                <tr>
+                  <td width="50%" style="padding-right: 10px; vertical-align: top;">
+                    <div style="background: #151515; border: 1px solid #374151; border-radius: 10px; padding: 20px; text-align: center;">
+                      <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Regular Price</p>
+                      <div style="text-decoration: line-through; color: #6b7280; font-size: 28px; font-weight: bold;">₹199</div>
+                    </div>
+                  </td>
+                  <td width="50%" style="padding-left: 10px; vertical-align: top;">
+                    <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 2px solid #22c55e; border-radius: 10px; padding: 20px; text-align: center;">
+                      <p style="margin: 0 0 8px 0; color: #4ade80; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Friend Price</p>
+                      <div style="color: #22c55e; font-size: 36px; font-weight: bold;">₹99</div>
+                      <div style="background: #22c55e; color: #000; padding: 4px 12px; border-radius: 12px; display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700;">SAVE ₹100</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- How It Works -->
+              <div style="background: #151515; border: 1px solid #374151; border-radius: 10px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px; font-weight: 600;">📋 How It Works</h3>
+                
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="padding: 12px 0; vertical-align: top; border-bottom: 1px solid #374151;">
+                      <div style="display: inline-block; width: 24px; height: 24px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 50%; text-align: center; line-height: 24px; font-size: 11px; font-weight: bold; margin-right: 12px; color: white;">1</div>
+                      <span style="color: #d1d5db; font-size: 13px;">Share the offer with your friends</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; vertical-align: top; border-bottom: 1px solid #374151;">
+                      <div style="display: inline-block; width: 24px; height: 24px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 50%; text-align: center; line-height: 24px; font-size: 11px; font-weight: bold; margin-right: 12px; color: white;">2</div>
+                      <span style="color: #d1d5db; font-size: 13px;">They select "Bring a Friend" during registration</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; vertical-align: top; border-bottom: 1px solid #374151;">
+                      <div style="display: inline-block; width: 24px; height: 24px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 50%; text-align: center; line-height: 24px; font-size: 11px; font-weight: bold; margin-right: 12px; color: white;">3</div>
+                      <span style="color: #d1d5db; font-size: 13px;">Enter your email for verification</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; vertical-align: top; border-bottom: 1px solid #374151;">
+                      <div style="display: inline-block; width: 24px; height: 24px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 50%; text-align: center; line-height: 24px; font-size: 11px; font-weight: bold; margin-right: 12px; color: white;">4</div>
+                      <span style="color: #d1d5db; font-size: 13px;">Complete OTP verification</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; vertical-align: top;">
+                      <div style="display: inline-block; width: 24px; height: 24px; background: linear-gradient(135deg, #9333ea, #2563eb); border-radius: 50%; text-align: center; line-height: 24px; font-size: 11px; font-weight: bold; margin-right: 12px; color: white;">5</div>
+                      <span style="color: #d1d5db; font-size: 13px;">They pay only ₹99 and enjoy the event!</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Benefits Section -->
+              <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin: 0 0 16px 0; color: #a855f7; font-size: 15px; font-weight: 600;">✨ Why Your Friends Should Join</h3>
+                
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td width="32" valign="top" style="padding: 8px 0;">
+                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🎓</div>
+                    </td>
+                    <td style="padding: 8px 0 8px 12px;">
+                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Network with Industry Leaders</div>
+                      <div style="color: #9ca3af; font-size: 12px;">Connect with tech professionals and innovators</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="32" valign="top" style="padding: 8px 0;">
+                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🚀</div>
+                    </td>
+                    <td style="padding: 8px 0 8px 12px;">
+                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Hands-on Workshops</div>
+                      <div style="color: #9ca3af; font-size: 12px;">Learn cutting-edge technologies and skills</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="32" valign="top" style="padding: 8px 0;">
+                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🏆</div>
+                    </td>
+                    <td style="padding: 8px 0 8px 12px;">
+                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Exciting Competitions</div>
+                      <div style="color: #9ca3af; font-size: 12px;">Participate in hackathons and win prizes</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="32" valign="top" style="padding: 8px 0;">
+                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🤝</div>
+                    </td>
+                    <td style="padding: 8px 0 8px 12px;">
+                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Community Building</div>
+                      <div style="color: #9ca3af; font-size: 12px;">Join a vibrant community of like-minded individuals</div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://acd.acesmitadt.com/bring-friend" style="display: inline-block; background: linear-gradient(135deg, #ec4899, #a855f7); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);">
+                  🎟️ Share with Friends Now
+                </a>
+                <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 11px;">Limited time offer</p>
+              </div>
+
+              <!-- Event Details -->
+              <div style="background: #151515; border: 1px solid #374151; border-radius: 10px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px; font-weight: 600;">📅 Event Details</h3>
+                
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #6b7280; font-size: 12px;">Event</span>
+                    </td>
+                    <td align="right" style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #d1d5db; font-size: 12px;">ACD 2026</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #6b7280; font-size: 12px;">Dates</span>
+                    </td>
+                    <td align="right" style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #d1d5db; font-size: 12px;">January 28-29, 2026</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #6b7280; font-size: 12px;">Venue</span>
+                    </td>
+                    <td align="right" style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #d1d5db; font-size: 12px;">Urmila Tai Karad Auditorium</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #6b7280; font-size: 12px;">Location</span>
+                    </td>
+                    <td align="right" style="padding: 10px 0; border-bottom: 1px solid #374151;">
+                      <span style="color: #d1d5db; font-size: 12px;">MIT ADT Pune</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0;">
+                      <span style="color: #6b7280; font-size: 12px;">Time</span>
+                    </td>
+                    <td align="right" style="padding: 10px 0;">
+                      <span style="color: #d1d5db; font-size: 12px;">8:00 AM - 5:00 PM</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Terms & Conditions -->
+              <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 10px; padding: 15px; margin: 25px 0;">
+                <p style="margin: 0 0 8px 0; color: #fbbf24; font-size: 12px; font-weight: 600;">⚠️ Important Notes</p>
+                <ul style="margin: 0; padding-left: 20px; color: #d1d5db; font-size: 11px; line-height: 1.7;">
+                  <li>Only registered attendees with completed payment can refer friends</li>
+                  <li>Friends must complete OTP verification using your email</li>
+                  <li>Each user can refer one friend maximum</li>
+                  <li>Offer valid until event date or while slots are available</li>
+                  <li>Friend registrations are subject to admin verification</li>
+                </ul>
+              </div>
+
+              <!-- Closing -->
+              <p style="margin: 25px 0 15px 0; color: #9ca3af; font-size: 13px; text-align: center;">
+                Help your friends save ₹100 and create amazing memories together at ACD 2026!
+              </p>
+
+            </div>
+
+            <!-- Footer -->
+            <div style="background: #151515; border-top: 1px solid #374151; padding: 20px; text-align: center;">
+              <p style="margin: 0 0 12px 0; color: #a855f7; font-size: 13px; font-weight: 600;">ACD 2026 - ACES Community Day</p>
+              <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 11px;">MIT ADT University, Pune</p>
+              
+              <div style="margin: 15px 0;">
+                <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 11px; font-weight: 600;">For queries, contact:</p>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td width="50%" style="text-align: center; padding: 5px;">
+                      <a href="tel:+919226750350" style="color: #60a5fa; text-decoration: none; font-size: 11px;">
+                        <strong>Aayush:</strong> 9226750350
+                      </a>
+                    </td>
+                    <td width="50%" style="text-align: center; padding: 5px;">
+                      <a href="tel:+919552448038" style="color: #60a5fa; text-decoration: none; font-size: 11px;">
+                        <strong>Ishan:</strong> 9552448038
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              
+              <p style="margin: 15px 0 0 0; color: #6b7280; font-size: 10px;">
+                Email: <a href="mailto:mail@acesmitadt.com" style="color: #60a5fa; text-decoration: none;">mail@acesmitadt.com</a>
+              </p>
+              
+              <p style="margin: 15px 0 0 0; color: #4b5563; font-size: 10px; line-height: 1.5;">
+                This is an automated promotional email. You're receiving this because you're registered for ACD 2026.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+🎉 SPECIAL OFFER - BRING YOUR FRIEND & SAVE! 🎉
+ACD 2026 - ACES Community Day
+
+Dear ${name},
+
+As a valued registered attendee of ACD 2026, we're excited to offer you an exclusive opportunity to bring your friends and help them save big!
+
+🎁 BRING A FRIEND OFFER:
+Your friends can register for only ₹99 instead of ₹199!
+That's a massive ₹100 savings!
+
+✨ WHY YOUR FRIENDS SHOULD JOIN:
+• Network with Industry Leaders - Connect with tech professionals and innovators
+• Hands-on Workshops - Learn cutting-edge technologies and skills
+• Exciting Competitions - Participate in hackathons and win amazing prizes
+• Community Building - Join a vibrant community of like-minded individuals
+
+📋 HOW IT WORKS:
+1. Share this offer with friends who haven't registered yet
+2. They visit the registration page and select "Bring a Friend" option
+3. They enter your email ID for verification
+4. They complete OTP verification and pay only ₹99!
+5. Both of you enjoy ACD 2026 together! 🎉
+
+📅 EVENT DETAILS:
+Event: ACD 2026 - ACES Community Day
+Dates: January 28-29, 2026
+Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
+Time: 8:00 AM - 5:00 PM
+
+⚠️ IMPORTANT NOTES:
+• Only registered attendees can refer friends
+• You must have successfully registered and paid for ACD 2026
+• Friends must complete OTP verification using your email
+• Offer valid until event date or while slots are available
+• Friend registrations are subject to admin verification
+
+🎟️ Registration Link: https://acd-ticket.vercel.app
+
+Help your friends save ₹100 and create amazing memories together at ACD 2026!
+
+For queries, contact:
+Aayush: 9226750350
+Ishan: 9552448038
+Email: mail@acesmitadt.com
+
+---
+ACD 2026 - ACES Community Day
+MIT ADT University, Pune
+
+This is an automated promotional email. You're receiving this because you're registered for ACD 2026.
+    `
+  }
+}
+
+// Send Bring Friend Promotion Email
+export const sendBringFriendPromotionEmail = async (registrationData) => {
+  try {
+    const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+    const { name, email } = regData
+
+    const emailTemplate = generateBringFriendPromotionEmail(registrationData)
+
+    const mailOptions = {
+      from: `"ACD 2026 - Special Offer" <${process.env.OTP_EMAIL_USER || 'no.reply@acesmitadt.com'}>`,
+      to: email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text
+    }
+
+    const info = await otpTransporter.sendMail(mailOptions)
+    console.log(`✅ Bring friend promotion email sent to ${name} (${email})`)
+    return { success: true, messageId: info.messageId }
+  } catch (error) {
+    console.error('❌ Bring friend promotion email failed:', error)
+    return { success: false, error: error.message }
+  }
+}

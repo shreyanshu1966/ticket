@@ -10,6 +10,7 @@ import {
   exportRegistrations,
   sendBulkNotification,
   sendTimingCorrection,
+  sendBringFriendPromotion,
   resendTickets,
   getFriendOfferSettings,
   toggleFriendOffer,
@@ -59,6 +60,9 @@ router.post('/notifications/bulk', [
 
 // Timing correction emails
 router.post('/notifications/timing-correction', sendTimingCorrection)
+
+// Bring friend offer promotion emails
+router.post('/notifications/bring-friend-promotion', sendBringFriendPromotion)
 
 // Resend tickets
 router.post('/notifications/resend-tickets', resendTickets)

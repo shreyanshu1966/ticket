@@ -179,20 +179,37 @@ export const verifyExistingUser = async (req, res) => {
     // Generate and save OTP
     const otp = generateOTP()
     
+    console.log('📧 Generating OTP for friend referral...')
+    console.log(`User: ${existingUser.name} (${existingUser.email})`)
+    console.log(`OTP: ${otp}`)
+    
     await OTP.create({
       email: existingUser.email,
       otp,
       purpose: 'friend_invitation'
     })
 
+    console.log('✅ OTP saved to database')
+
     // Send OTP email
     try {
-      await sendFriendOTPEmail(existingUser.email, existingUser.name, otp)
+      console.log('📤 Attempting to send OTP email...')
+      const emailResult = await sendFriendOTPEmail(existingUser.email, existingUser.name, otp)
+      
+      if (!emailResult.success) {
+        console.error('❌ Email sending failed:', emailResult.error)
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to send OTP email: ' + emailResult.error
+        })
+      }
+      
+      console.log('✅ OTP email sent successfully:', emailResult.messageId)
     } catch (emailError) {
-      console.error('Error sending OTP email:', emailError)
+      console.error('❌ Error sending OTP email:', emailError)
       return res.status(500).json({
         success: false,
-        message: 'Failed to send OTP email'
+        message: 'Failed to send OTP email: ' + emailError.message
       })
     }
 

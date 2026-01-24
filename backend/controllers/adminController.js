@@ -1,6 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
-import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendConfirmationEmail } from '../services/emailService.js'
+import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendConfirmationEmail, sendBringFriendPromotionEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -711,6 +711,111 @@ export const sendTimingCorrection = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error sending timing correction emails: ' + error.message
+    })
+  }
+}
+
+// Send Bring Friend Offer Promotion Emails
+export const sendBringFriendPromotion = async (req, res) => {
+  try {
+    const { targetGroup = 'completed' } = req.body
+
+    // Build filter - EXACT same eligibility check as bring-friend form
+    // Criteria from friendController.checkEligibility:
+    // 1. Payment must be completed (not just verified)
+    // 2. NOT a group booking user
+    // 3. NOT a friend referral themselves
+    // 4. Has NOT already referred a friend
+    const filter = {
+      paymentStatus: 'completed',  // Only completed payments, matching bring-friend eligibility
+      isGroupBooking: { $ne: true },  // Group booking users cannot refer friends
+      isFriendReferral: { $ne: true },  // Friend referrals cannot refer other friends
+      hasReferredFriend: { $ne: true }  // Users who already referred cannot refer again
+    }
+
+    if (targetGroup === 'individual') {
+      // Already filtered by isGroupBooking: false above
+      // No additional filter needed
+    } else if (targetGroup === 'group') {
+      // Skip - group bookings are not eligible
+      return res.json({
+        success: true,
+        message: 'Group booking users are not eligible to refer friends',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup
+        }
+      })
+    }
+    // 'all' or 'completed' means send to all eligible individual completed registrations
+
+    const registrations = await Registration.find(filter).select('name email')
+
+    if (registrations.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No eligible recipients found for bring friend promotion',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup
+        }
+      })
+    }
+
+    console.log(`🎁 Sending bring friend promotion emails to ${registrations.length} recipients...`)
+
+    let sent = 0
+    let failed = 0
+    const errors = []
+
+    // Send bring friend promotion email to each recipient
+    for (const registration of registrations) {
+      try {
+        const result = await sendBringFriendPromotionEmail(registration)
+        if (result.success) {
+          sent++
+          console.log(`✅ Bring friend promotion email sent to ${registration.email}`)
+        } else {
+          failed++
+          errors.push({
+            email: registration.email,
+            error: result.error
+          })
+          console.error(`❌ Failed to send to ${registration.email}:`, result.error)
+        }
+
+        // Small delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        failed++
+        errors.push({
+          email: registration.email,
+          error: error.message
+        })
+        console.error(`❌ Error sending to ${registration.email}:`, error.message)
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Bring friend promotion emails sent! ${sent} emails sent${failed > 0 ? `, ${failed} failed` : ''}`,
+      data: {
+        sent,
+        failed,
+        total: registrations.length,
+        targetGroup,
+        errors
+      }
+    })
+  } catch (error) {
+    console.error('Error sending bring friend promotion emails:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error sending bring friend promotion emails: ' + error.message
     })
   }
 }

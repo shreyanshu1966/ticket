@@ -35,8 +35,8 @@ const transporter = nodemailer.createTransport({
   connectionTimeout: 30000,
   greetingTimeout: 30000,
   socketTimeout: 60000,
-  debug: process.env.DEBUG_EMAIL === 'true',
-  logger: process.env.DEBUG_EMAIL === 'true'
+  debug: false,  // Disabled to avoid duplicate console logs
+  logger: false  // Disabled to avoid duplicate console logs
 })
 
 // Configure noreply transporter for notifications
@@ -68,8 +68,8 @@ export const noreplyTransporter = nodemailer.createTransport({
   connectionTimeout: 30000,
   greetingTimeout: 30000,
   socketTimeout: 60000,
-  debug: process.env.DEBUG_EMAIL === 'true',
-  logger: process.env.DEBUG_EMAIL === 'true'
+  debug: false,  // Disabled to avoid duplicate console logs
+  logger: false  // Disabled to avoid duplicate console logs
 })
 
 // Configure OTP transporter for no.reply@acesmitadt.com (for OTPs only)
@@ -101,8 +101,8 @@ export const otpTransporter = nodemailer.createTransport({
   connectionTimeout: 30000,
   greetingTimeout: 30000,
   socketTimeout: 60000,
-  debug: process.env.DEBUG_EMAIL === 'true',
-  logger: process.env.DEBUG_EMAIL === 'true'
+  debug: false,  // Disabled to avoid duplicate console logs
+  logger: false  // Disabled to avoid duplicate console logs
 })
 
 // Verify main email configuration

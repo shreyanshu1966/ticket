@@ -101,6 +101,44 @@ const AdminNotifications = () => {
     }
   }
 
+  const handleSendBringFriendPromotion = async (targetGroup = 'completed') => {
+    if (!confirm(`Are you sure you want to send "Bring Your Friend" promotional emails to ${targetGroup === 'completed' ? 'ALL registered users' : targetGroup + ' users'}? This will promote the friend referral offer.`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(buildApiUrl('/api/admin/notifications/bring-friend-promotion'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ targetGroup })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken')
+        navigate('/admin/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`✅ ${data.message} - Bring friend promotion emails sent successfully!`)
+        if (data.data.failed > 0) {
+          setError(`Note: ${data.data.failed} emails failed to send. Check server logs for details.`)
+        }
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error sending bring friend promotion emails')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleResendTickets = async (targetGroup = 'completed') => {
     if (!confirm(`Are you sure you want to resend tickets to ${targetGroup === 'completed' ? 'ALL users with completed payments' : targetGroup + ' users'}? This will send registration confirmation and ticket emails.`)) {
       return
@@ -285,6 +323,76 @@ const AdminNotifications = () => {
 
               <p className="text-xs text-yellow-700 mt-3 italic">
                 💡 Tip: Test with a small group first before sending to all users
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bring Friend Offer Promotion Section */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-400 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-bold text-purple-900 mb-2">
+                🎁 Bring Friend Offer Promotion
+              </h3>
+              <p className="text-sm text-purple-800 mb-4">
+                Send promotional emails to registered users encouraging them to bring their friends.
+                Friends can register for only <strong>₹99</strong> (saving ₹100 from the regular ₹199 price).
+              </p>
+
+              <div className="bg-white bg-opacity-60 rounded-md p-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Email includes:</h4>
+                <ul className="text-xs text-gray-700 space-y-1">
+                  <li>✓ Exclusive ₹100 discount offer for friends</li>
+                  <li>✓ Step-by-step guide on how to refer friends</li>
+                  <li>✓ Event benefits and highlights</li>
+                  <li>✓ Beautiful, engaging design with clear call-to-action</li>
+                  <li>✓ Terms and conditions of the offer</li>
+                </ul>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-md p-3 mb-4 border border-purple-200">
+                <p className="text-xs text-purple-900 font-medium mb-1">📊 Eligibility Criteria (Same as Bring Friend Form):</p>
+                <ul className="text-xs text-purple-800 space-y-1 ml-4">
+                  <li>✅ Payment status must be "completed"</li>
+                  <li>✅ Individual bookings only (NOT group bookings)</li>
+                  <li>✅ Not a friend referral themselves</li>
+                  <li>✅ Has NOT already referred a friend</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleSendBringFriendPromotion('completed')}
+                  disabled={loading}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-6 py-2.5 rounded-md font-medium transition-colors shadow-md flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      Send to All Eligible Users
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <p className="text-xs text-purple-700 mt-3 italic">
+                💡 Tip: Only individual booking users who haven't referred yet are eligible (matches bring friend form rules)
               </p>
             </div>
           </div>
