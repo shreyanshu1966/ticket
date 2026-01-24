@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
+import initializeAdminSettings from './init-admin-settings.js'
 
 // Load environment variables
 dotenv.config()
@@ -106,7 +107,10 @@ process.on('SIGINT', () => {
 })
 
 // Connect to MongoDB and start server
-connectDB().then(() => {
+connectDB().then(async () => {
+  // Initialize admin settings
+  await initializeAdminSettings()
+  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`📡 API endpoints available at http://localhost:${PORT}/api`)

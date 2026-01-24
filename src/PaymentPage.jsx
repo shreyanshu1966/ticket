@@ -34,6 +34,10 @@ function PaymentPage() {
                         college: registration.college,
                         year: registration.year,
                         amount: registration.amount,
+                        totalAmount: registration.totalAmount,
+                        originalAmount: registration.originalAmount,
+                        isFriendReferral: registration.isFriendReferral,
+                        friendDiscountApplied: registration.friendDiscountApplied,
                         paymentStatus: registration.paymentStatus
                     })
                 } else if (registration.paymentStatus === 'paid_awaiting_verification') {

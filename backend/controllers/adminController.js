@@ -5,10 +5,112 @@ import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTim
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
   try {
-    const totalRegistrations = await Registration.countDocuments()
-    const completedPayments = await Registration.countDocuments({ paymentStatus: 'completed' })
-    const pendingPayments = await Registration.countDocuments({ paymentStatus: 'pending' })
-    const failedPayments = await Registration.countDocuments({ paymentStatus: 'failed' })
+    // Count total individuals (individual registrations + group leaders + group members)
+    const totalRegistrationsStats = await Registration.aggregate([
+      {
+        $group: {
+          _id: null,
+          individualRegistrations: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', false] }, 1, 0]
+            }
+          },
+          groupLeaders: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', true] }, 1, 0]
+            }
+          },
+          groupMembers: {
+            $sum: {
+              $cond: [
+                { $eq: ['$isGroupBooking', true] },
+                { $size: { $ifNull: ['$groupMembers', []] } },
+                0
+              ]
+            }
+          }
+        }
+      }
+    ])
+
+    const totalRegistrations = totalRegistrationsStats.length > 0 
+      ? totalRegistrationsStats[0].individualRegistrations + totalRegistrationsStats[0].groupLeaders + totalRegistrationsStats[0].groupMembers 
+      : 0
+
+    // Count payments by status
+    const completedPayments = await Registration.countDocuments({ 
+      paymentStatus: { $in: ['completed', 'verified'] } 
+    })
+    const pendingPayments = await Registration.countDocuments({ 
+      paymentStatus: 'pending'
+    })
+    const failedPayments = await Registration.countDocuments({ 
+      paymentStatus: { $in: ['failed', 'verification_failed'] } 
+    })
+
+    // Group booking statistics (number of group bookings, not individual people)
+    const groupBookings = await Registration.countDocuments({ isGroupBooking: true })
+    
+    // Calculate total tickets - only count completed/verified payments
+    const ticketStats = await Registration.aggregate([
+      {
+        $match: {
+          paymentStatus: { $in: ['completed', 'verified'] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalTickets: { $sum: '$ticketQuantity' }
+        }
+      }
+    ])
+    const totalTickets = ticketStats.length > 0 ? ticketStats[0].totalTickets : 0
+
+    // Calculate total savings from group offers (Buy 3 Get 1 Free)
+    const savingsStats = await Registration.aggregate([
+      {
+        $match: { 
+          isGroupBooking: true,
+          ticketQuantity: { $gte: 4 },
+          paymentStatus: { $in: ['completed', 'verified', 'pending', 'paid_awaiting_verification'] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSavings: {
+            $sum: {
+              $multiply: [
+                { $floor: { $divide: ['$ticketQuantity', 4] } },
+                19900
+              ]
+            }
+          }
+        }
+      }
+    ])
+
+    // Add friend referral savings (₹99 saved per referred friend)
+    const friendReferralSavings = await Registration.aggregate([
+      {
+        $match: {
+          isFriendReferral: true,
+          paymentStatus: { $in: ['completed', 'verified', 'pending', 'paid_awaiting_verification'] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSavings: { 
+            $sum: 9900 // ₹99 saved per friend referral (₹199 - ₹100 = ₹99)
+          }
+        }
+      }
+    ])
+
+    const totalSavings = (savingsStats.length > 0 ? savingsStats[0].totalSavings : 0) + 
+                        (friendReferralSavings.length > 0 ? friendReferralSavings[0].totalSavings : 0)
 
     // Get registrations by year
     const yearStats = await Registration.aggregate([
@@ -20,33 +122,136 @@ export const getDashboardStats = async (req, res) => {
       }
     ])
 
-    // Get recent registrations (last 10)
+    // Get recent registrations (last 10) with group booking info
     const recentRegistrations = await Registration.find()
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('name email college paymentStatus createdAt')
+      .select('name email college paymentStatus isGroupBooking ticketQuantity createdAt')
 
-    // Calculate total revenue
+    // Calculate total revenue - only from completed payments
+    // Properly handle individual, group bookings, and friend referrals
     const totalRevenue = await Registration.aggregate([
-      { $match: { paymentStatus: 'completed' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
+      { $match: { paymentStatus: { $in: ['completed', 'verified'] } } },
+      { 
+        $group: { 
+          _id: null, 
+          total: { 
+            $sum: {
+              $cond: [
+                // For group bookings, use totalAmount
+                { $eq: ['$isGroupBooking', true] },
+                '$totalAmount',
+                // For friend referrals, friend pays ₹100 (10000 paise)
+                {
+                  $cond: [
+                    { $eq: ['$isFriendReferral', true] },
+                    10000, // ₹100 for referred friend
+                    // For regular individual registrations (including referrers), use ₹199
+                    19900 // ₹199 for individual/referrer
+                  ]
+                }
+              ]
+            }
+          } 
+        } 
+      }
     ])
 
     const revenue = totalRevenue.length > 0 ? totalRevenue[0].total / 100 : 0
 
-    // Get entry statistics
-    const totalEntriesConfirmed = await Registration.countDocuments({ entryConfirmed: true })
-    const totalScanned = await Registration.countDocuments({ isScanned: true })
+    // Get entry statistics - count individual people confirmed (not just registrations)
+    const entriesConfirmedStats = await Registration.aggregate([
+      {
+        $match: { entryConfirmed: true }
+      },
+      {
+        $group: {
+          _id: null,
+          individualEntries: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', false] }, 1, 0]
+            }
+          },
+          groupLeaderEntries: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', true] }, 1, 0]
+            }
+          },
+          groupMemberEntries: {
+            $sum: {
+              $reduce: {
+                input: { $ifNull: ['$groupMembers', []] },
+                initialValue: 0,
+                in: {
+                  $add: [
+                    '$$value',
+                    { $cond: [{ $eq: ['$$this.entryConfirmed', true] }, 1, 0] }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    ])
+
+    const totalEntriesConfirmed = entriesConfirmedStats.length > 0 
+      ? entriesConfirmedStats[0].individualEntries + entriesConfirmedStats[0].groupLeaderEntries + entriesConfirmedStats[0].groupMemberEntries
+      : 0
+
+    // Get scanned statistics - count individual people scanned
+    const scannedStats = await Registration.aggregate([
+      {
+        $match: { isScanned: true }
+      },
+      {
+        $group: {
+          _id: null,
+          individualScanned: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', false] }, 1, 0]
+            }
+          },
+          groupLeaderScanned: {
+            $sum: {
+              $cond: [{ $eq: ['$isGroupBooking', true] }, 1, 0]
+            }
+          },
+          groupMemberScanned: {
+            $sum: {
+              $reduce: {
+                input: { $ifNull: ['$groupMembers', []] },
+                initialValue: 0,
+                in: {
+                  $add: [
+                    '$$value',
+                    { $cond: [{ $eq: ['$$this.isScanned', true] }, 1, 0] }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    ])
+
+    const totalScanned = scannedStats.length > 0 
+      ? scannedStats[0].individualScanned + scannedStats[0].groupLeaderScanned + scannedStats[0].groupMemberScanned
+      : 0
+
     const awaitingVerification = await Registration.countDocuments({ paymentStatus: 'paid_awaiting_verification' })
 
     res.json({
       success: true,
       data: {
         totalRegistrations,
+        totalTickets,
+        groupBookings,
         completedPayments,
         pendingPayments,
         failedPayments,
         totalRevenue: revenue,
+        totalSavings: totalSavings / 100, // Convert paise to rupees
         totalEntriesConfirmed,
         totalScanned,
         awaitingVerification,
@@ -69,6 +274,7 @@ export const getRegistrationById = async (req, res) => {
     const { id } = req.params
 
     const registration = await Registration.findById(id)
+      .populate('referredBy', 'name email') // Populate referrer information
 
     if (!registration) {
       return res.status(404).json({
@@ -99,6 +305,7 @@ export const getAllRegistrations = async (req, res) => {
       paymentStatus,
       year,
       search,
+      bookingType,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query
@@ -107,6 +314,23 @@ export const getAllRegistrations = async (req, res) => {
     const filter = {}
     if (paymentStatus) filter.paymentStatus = paymentStatus
     if (year) filter.year = year
+    
+    // Handle booking type filter
+    if (bookingType) {
+      switch (bookingType) {
+        case 'group':
+          filter.isGroupBooking = true
+          break
+        case 'individual':
+          filter.isGroupBooking = false
+          filter.isFriendReferral = false
+          break
+        case 'referral':
+          filter.isFriendReferral = true
+          break
+      }
+    }
+    
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -122,6 +346,7 @@ export const getAllRegistrations = async (req, res) => {
     // Get registrations - EXCLUDE heavy fields like paymentScreenshot
     // This dramatically improves performance as screenshots can be several MB each
     const registrations = await Registration.find(filter)
+      .populate('referredBy', 'name email') // Populate referrer information
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
       .skip(skip)
       .limit(parseInt(limit))
@@ -222,28 +447,36 @@ export const deleteRegistration = async (req, res) => {
 // Export registrations to CSV format data
 export const exportRegistrations = async (req, res) => {
   try {
-    const { paymentStatus, year } = req.query
+    const { paymentStatus, year, isGroupBooking } = req.query
 
     // Build filter
     const filter = {}
     if (paymentStatus) filter.paymentStatus = paymentStatus
     if (year) filter.year = year
+    if (isGroupBooking !== undefined) {
+      filter.isGroupBooking = isGroupBooking === 'true'
+    }
 
     const registrations = await Registration.find(filter)
       .sort({ createdAt: -1 })
 
-    // Convert to CSV format data with comprehensive fields
+    // Convert to CSV format data with comprehensive fields including group booking info
     const csvData = registrations.map(reg => ({
+      'Registration ID': reg._id.toString(),
       'Ticket Number': reg.ticketNumber || 'N/A',
       Name: reg.name,
       Email: reg.email,
       Phone: reg.phone,
       College: reg.college,
       Year: reg.year,
+      'Booking Type': reg.isGroupBooking ? 'Group' : 'Individual',
+      'Ticket Quantity': reg.ticketQuantity || 1,
+      'Free Tickets': reg.isGroupBooking && reg.ticketQuantity >= 4 ? Math.floor(reg.ticketQuantity / 4) : 0,
+      'Total Amount (₹)': reg.totalAmount ? (reg.totalAmount / 100).toFixed(2) : (reg.amount ? (reg.amount / 100).toFixed(2) : '0.00'),
+      'Savings (₹)': reg.isGroupBooking && reg.ticketQuantity >= 4 ? (Math.floor(reg.ticketQuantity / 4) * 199).toFixed(2) : '0.00',
       'Payment Status': reg.paymentStatus,
       'Payment Method': reg.paymentMethod || 'N/A',
       'UPI Transaction ID': reg.upiTransactionId || 'N/A',
-      'Amount (₹)': reg.amount ? (reg.amount / 100).toFixed(2) : '0.00',
       'Registration Date': reg.createdAt ? new Date(reg.createdAt).toLocaleString('en-IN') : 'N/A',
       'Payment Submitted At': reg.paymentSubmittedAt ? new Date(reg.paymentSubmittedAt).toLocaleString('en-IN') : 'N/A',
       'Admin Verified At': reg.adminVerifiedAt ? new Date(reg.adminVerifiedAt).toLocaleString('en-IN') : 'N/A',
@@ -257,7 +490,8 @@ export const exportRegistrations = async (req, res) => {
       'Resend Count': reg.resendCount || 0,
       'Last Resent At': reg.lastResentAt ? new Date(reg.lastResentAt).toLocaleString('en-IN') : 'N/A',
       'Payment Notes': reg.paymentNotes || 'N/A',
-      'Rejection Reason': reg.paymentRejectionReason || 'N/A'
+      'Rejection Reason': reg.paymentRejectionReason || 'N/A',
+      'Group Members Count': reg.isGroupBooking && reg.groupMembers ? reg.groupMembers.length : 0
     }))
 
     res.json({
@@ -588,6 +822,119 @@ export const resendTickets = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error resending tickets: ' + error.message
+    })
+  }
+}
+
+// Friend Offer Management
+export const getFriendOfferSettings = async (req, res) => {
+  try {
+    const AdminSettings = (await import('../models/AdminSettings.js')).default
+    
+    const isEnabled = await AdminSettings.getSetting('friendOfferEnabled')
+    const topUpAmount = await AdminSettings.getSetting('friendOfferTopUpAmount')
+    
+    // Get friend referral statistics
+    const totalFriendReferrals = await Registration.countDocuments({ isFriendReferral: true })
+    const completedFriendPayments = await Registration.countDocuments({ 
+      isFriendReferral: true,
+      paymentStatus: 'completed'
+    })
+    const pendingFriendPayments = await Registration.countDocuments({
+      isFriendReferral: true, 
+      paymentStatus: { $in: ['pending', 'paid_awaiting_verification'] }
+    })
+    
+    // Get recent friend registrations
+    const recentFriendRegistrations = await Registration.find({ isFriendReferral: true })
+      .populate('referredBy', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('name email college paymentStatus friendReferralTopUp friendDiscountApplied createdAt referredBy')
+
+    res.json({
+      success: true,
+      data: {
+        enabled: isEnabled ?? true,
+        topUpAmount: topUpAmount ?? 10000,
+        statistics: {
+          totalFriendReferrals,
+          completedFriendPayments,
+          pendingFriendPayments
+        },
+        recentRegistrations: recentFriendRegistrations
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching friend offer settings:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching friend offer settings'
+    })
+  }
+}
+
+export const toggleFriendOffer = async (req, res) => {
+  try {
+    const AdminSettings = (await import('../models/AdminSettings.js')).default
+    const { enabled, adminName } = req.body
+    
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'enabled field must be a boolean'
+      })
+    }
+
+    await AdminSettings.updateSetting('friendOfferEnabled', enabled, adminName || 'Admin')
+
+    res.json({
+      success: true,
+      message: `Friend offer ${enabled ? 'enabled' : 'disabled'} successfully`,
+      data: { enabled }
+    })
+  } catch (error) {
+    console.error('Error toggling friend offer:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error updating friend offer setting'
+    })
+  }
+}
+
+export const getFriendRegistrations = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+    const skip = (page - 1) * limit
+
+    // Get friend registrations with referrer information
+    const friendRegistrations = await Registration.find({ isFriendReferral: true })
+      .populate('referredBy', 'name email ticketNumber')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('name email phone college year paymentStatus friendReferralTopUp friendDiscountApplied originalAmount amount createdAt paymentSubmittedAt adminVerifiedAt referredBy')
+
+    const totalCount = await Registration.countDocuments({ isFriendReferral: true })
+
+    res.json({
+      success: true,
+      data: {
+        registrations: friendRegistrations,
+        pagination: {
+          current: page,
+          total: Math.ceil(totalCount / limit),
+          count: friendRegistrations.length,
+          totalItems: totalCount
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching friend registrations:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching friend registrations'
     })
   }
 }

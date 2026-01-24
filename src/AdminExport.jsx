@@ -7,7 +7,8 @@ const AdminExport = () => {
   const [error, setError] = useState('')
   const [filters, setFilters] = useState({
     paymentStatus: '',
-    year: ''
+    year: '',
+    isGroupBooking: ''
   })
   const navigate = useNavigate()
 
@@ -121,7 +122,7 @@ const AdminExport = () => {
             </p>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Payment Status
@@ -158,17 +159,34 @@ const AdminExport = () => {
                   <option value="Post Graduate">Post Graduate</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Booking Type
+                </label>
+                <select
+                  name="isGroupBooking"
+                  value={filters.isGroupBooking}
+                  onChange={handleFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">All Bookings</option>
+                  <option value="true">Group Bookings Only</option>
+                  <option value="false">Individual Bookings Only</option>
+                </select>
+              </div>
             </div>
 
             {/* Export Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
               <h3 className="text-sm font-medium text-blue-800 mb-2">Export will include:</h3>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Name, Email, and Phone Number</li>
-                <li>• College and Academic Year</li>
-                <li>• Payment Status and Amount</li>
-                <li>• Payment ID (if available)</li>
-                <li>• Registration Date</li>
+                <li>• Basic Info: Name, Email, Phone, College, Year</li>
+                <li>• Booking Details: Type (Group/Individual), Ticket Quantity</li>
+                <li>• Payment Info: Status, Amount, UPI Transaction ID</li>
+                <li>• Savings: Free tickets and amount saved from offers</li>
+                <li>• Timestamps: Registration, Payment, Admin verification</li>
+                <li>• Status: Ticket generation, Email delivery, Entry scanning</li>
               </ul>
             </div>
 

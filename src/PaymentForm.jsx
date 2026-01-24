@@ -11,8 +11,9 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
   const [isMobile, setIsMobile] = useState(false)
   const fileInputRef = useRef(null)
 
-  // UPI payment details from config
-  const { UPI_ID, AMOUNT: PAYMENT_AMOUNT, EVENT_NAME } = PAYMENT_CONFIG
+  // UPI payment details from config and registration data
+  const { UPI_ID, EVENT_NAME } = PAYMENT_CONFIG
+  const PAYMENT_AMOUNT = registrationData.totalAmount ? (registrationData.totalAmount / 100) : (registrationData.amount / 100)
 
   // Detect if user is on mobile device
   useEffect(() => {
@@ -141,20 +142,61 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
 
           <div className="space-y-4 mb-6">
             <div className="bg-[#262626] rounded-lg p-4 border border-gray-600">
-              <h3 className="font-semibold text-purple-400 mb-2">Payment Details</h3>
+              <h3 className="font-semibold text-purple-400 mb-2">Booking Details</h3>
               <div className="text-sm space-y-2">
+                {registrationData.isGroupBooking && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Booking Type:</span>
+                    <span className="text-green-400 font-semibold">Group Booking</span>
+                  </div>
+                )}
+                {registrationData.ticketQuantity && registrationData.ticketQuantity > 1 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Number of Tickets:</span>
+                    <span className="text-white font-bold">{registrationData.ticketQuantity}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-400">Amount:</span>
                   <span className="text-white font-bold">₹{PAYMENT_AMOUNT}</span>
                 </div>
+                {registrationData.isFriendReferral && registrationData.friendDiscountApplied && (
+                  <div className="bg-green-900/30 border border-green-600/50 rounded p-3 mt-2">
+                    <div className="text-center mb-2">
+                      <span className="text-green-400 font-semibold text-sm">🎉 Friend Referral Discount Applied!</span>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Original Price:</span>
+                        <span className="text-gray-400 line-through">₹{registrationData.originalAmount / 100}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-400">Friend Discount:</span>
+                        <span className="text-green-400">-₹{registrationData.friendDiscountApplied / 100}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-green-600/30 pt-1 mt-1">
+                        <span className="text-white font-semibold">You Pay:</span>
+                        <span className="text-white font-bold">₹{PAYMENT_AMOUNT}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-400">UPI ID:</span>
                   <span className="text-white font-mono text-xs">{UPI_ID}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Name:</span>
+                  <span className="text-gray-400">Primary Name:</span>
                   <span className="text-white">{registrationData.name}</span>
                 </div>
+                {registrationData.isGroupBooking && registrationData.ticketQuantity >= 4 && (
+                  <div className="bg-green-900/30 border border-green-600/50 rounded p-2 mt-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-green-400">🎉 Buy 3 Get 1 Free Applied!</span>
+                      <span className="text-green-400 font-bold">Saved: ₹{Math.floor(registrationData.ticketQuantity / 4) * 199}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

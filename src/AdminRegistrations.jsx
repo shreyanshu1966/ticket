@@ -11,6 +11,7 @@ const AdminRegistrations = () => {
     search: '',
     paymentStatus: '',
     year: '',
+    bookingType: '',
     page: 1,
     limit: 20
   })
@@ -19,6 +20,7 @@ const AdminRegistrations = () => {
   const [loadingRegistration, setLoadingRegistration] = useState('') // Track which registration is being loaded
   const [selectedRegistration, setSelectedRegistration] = useState(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [expandedRegistrations, setExpandedRegistrations] = useState(new Set())
   const navigate = useNavigate()
 
   const getAuthHeaders = () => {
@@ -27,6 +29,16 @@ const AdminRegistrations = () => {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
+  }
+
+  const toggleMemberExpansion = (registrationId) => {
+    const newExpanded = new Set(expandedRegistrations)
+    if (newExpanded.has(registrationId)) {
+      newExpanded.delete(registrationId)
+    } else {
+      newExpanded.add(registrationId)
+    }
+    setExpandedRegistrations(newExpanded)
   }
 
   const fetchRegistrations = async () => {
@@ -257,7 +269,7 @@ const AdminRegistrations = () => {
 
         {/* Filters */}
         <div className="bg-white shadow rounded-lg mb-6 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <input
@@ -283,6 +295,20 @@ const AdminRegistrations = () => {
                 <option value="verified">Verified</option>
                 <option value="completed">Completed</option>
                 <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Booking Type</label>
+              <select
+                name="bookingType"
+                value={filters.bookingType || ''}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">All Bookings</option>
+                <option value="individual">Individual Bookings</option>
+                <option value="group">Group Bookings</option>
+                <option value="referral">Referral Bookings</option>
               </select>
             </div>
             <div>
@@ -400,10 +426,44 @@ const AdminRegistrations = () => {
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {registration.name}
+                            {registration.isGroupBooking && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                Group Leader
+                              </span>
+                            )}
+                            {registration.isFriendReferral && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                Referred
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">
                             {new Date(registration.createdAt).toLocaleDateString()}
                           </div>
+                          {registration.isGroupBooking && registration.groupMembers && registration.groupMembers.length > 0 && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => toggleMemberExpansion(registration._id)}
+                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                              >
+                                <svg className={`w-4 h-4 mr-1 transform transition-transform ${expandedRegistrations.has(registration._id) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                                {registration.groupMembers.length} Members
+                              </button>
+                              {expandedRegistrations.has(registration._id) && (
+                                <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                  {registration.groupMembers.map((member, idx) => (
+                                    <div key={idx} className="py-1 text-xs text-gray-600 border-b border-gray-100 last:border-b-0">
+                                      <div className="font-medium text-gray-800">{member.name}</div>
+                                      <div className="text-gray-500">{member.email}</div>
+                                      <div className="text-gray-400">{member.college} • {member.year}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -415,12 +475,59 @@ const AdminRegistrations = () => {
                         <div className="text-sm text-gray-500">{registration.year}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          {registration.isGroupBooking ? (
+                            <div>
+                              <div className="text-sm font-medium text-purple-900">
+                                Group Booking
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {registration.ticketQuantity} tickets
+                              </div>
+                              {registration.ticketQuantity >= 4 && (
+                                <div className="text-xs text-green-600 font-medium">
+                                  {Math.floor(registration.ticketQuantity / 4)} FREE tickets!
+                                </div>
+                              )}
+                            </div>
+                          ) : registration.isFriendReferral ? (
+                            <div>
+                              <div className="text-sm font-medium text-blue-900">
+                                Referral Booking
+                              </div>
+                              <div className="text-xs text-green-600 font-medium">
+                                ₹100 discount applied!
+                              </div>
+                              {registration.referredBy && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Referred by: {registration.referredBy.name || 'Loading...'}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-900">
+                              Individual Booking
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(registration.paymentStatus)}`}>
                           {getStatusLabel(registration.paymentStatus)}
                         </span>
                         <div className="text-sm text-gray-500 mt-1">
-                          ₹{registration.amount / 100}
+                          ₹{(registration.totalAmount || registration.amount) / 100}
                         </div>
+                        {registration.isGroupBooking && registration.ticketQuantity >= 4 && (
+                          <div className="text-xs text-green-600 mt-1">
+                            Saved: ₹{Math.floor(registration.ticketQuantity / 4) * 199}
+                          </div>
+                        )}
+                        {registration.isFriendReferral && (
+                          <div className="text-xs text-green-600 mt-1">
+                            Saved: ₹{registration.friendDiscountApplied || 100}
+                          </div>
+                        )}
                         {registration.upiTransactionId && (
                           <div className="text-xs text-gray-400 font-mono mt-1">
                             UTR: {registration.upiTransactionId}

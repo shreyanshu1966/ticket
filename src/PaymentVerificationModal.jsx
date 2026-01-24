@@ -88,6 +88,40 @@ const PaymentVerificationModal = ({ registration, isOpen, onClose, onVerify }) =
                   <span className="text-gray-600">Registration Date:</span>
                   <span className="font-medium">{formatDate(registration.registrationDate)}</span>
                 </div>
+                {registration.isGroupBooking && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Booking Type:</span>
+                      <span className="font-medium text-purple-600">Group Booking</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Tickets:</span>
+                      <span className="font-medium">{registration.ticketQuantity}</span>
+                    </div>
+                    {registration.ticketQuantity >= 4 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Free Tickets:</span>
+                        <span className="font-medium text-green-600">
+                          {Math.floor(registration.ticketQuantity / 4)} FREE!
+                        </span>
+                      </div>
+                    )}
+                    {registration.groupMembers && registration.groupMembers.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-gray-600 font-medium mb-2">Group Members:</div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {registration.groupMembers.map((member, idx) => (
+                            <div key={idx} className="text-xs bg-gray-100 rounded p-2">
+                              <div className="font-medium text-gray-800">{member.name}</div>
+                              <div className="text-gray-600">{member.email}</div>
+                              <div className="text-gray-500">{member.college} • {member.year}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -102,8 +136,14 @@ const PaymentVerificationModal = ({ registration, isOpen, onClose, onVerify }) =
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Method:</span>
-                  <span className="font-medium uppercase">{registration.paymentMethod}</span>
+                  <span className="font-medium">₹{(registration.totalAmount || registration.amount) / 100}</span>
                 </div>
+                {registration.isGroupBooking && registration.ticketQuantity >= 4 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Savings:</span>
+                    <span className="font-medium text-green-600">₹{Math.floor(registration.ticketQuantity / 4) * 199}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Amount:</span>
                   <span className="font-medium">₹{registration.amount / 100}</span>

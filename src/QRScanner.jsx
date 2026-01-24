@@ -202,7 +202,9 @@ const QRScanner = () => {
         },
         body: JSON.stringify({
           registrationId: verificationResult.registrationId,
-          ticketNumber: verificationResult.ticketNumber
+          ticketNumber: verificationResult.ticketNumber,
+          isGroupMember: verificationResult.isGroupMember || false,
+          groupMemberId: verificationResult.groupMemberId || null
         })
       })
 
@@ -495,6 +497,14 @@ const QRScanner = () => {
                   <span className="text-blue-600 font-medium">Ticket #:</span>
                   <span className="text-blue-800 font-mono">{verificationResult.ticketNumber}</span>
                 </div>
+                {verificationResult.isGroupMember && (
+                  <div className="flex justify-between">
+                    <span className="text-blue-600 font-medium">Type:</span>
+                    <span className="text-purple-800 bg-purple-100 px-2 py-1 rounded-full text-xs font-medium">
+                      Group Member Ticket
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-blue-600 font-medium">Amount:</span>
                   <span className="text-blue-800">₹{verificationResult.amount / 100}</span>

@@ -7,6 +7,7 @@ import AdminDashboard from './AdminDashboard'
 import AdminRegistrations from './AdminRegistrations'
 import AdminExport from './AdminExport'
 import AdminNotifications from './AdminNotifications'
+import BringFriendForm from './BringFriendForm'
 import ProtectedRoute from './ProtectedRoute'
 import TicketPreview from './TicketPreview'
 import './App.css'
@@ -43,6 +44,15 @@ function Navigation() {
             📱 Scanner
           </Link>
           <Link
+            to="/bring-friend"
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${location.pathname === '/bring-friend'
+              ? 'bg-blue-800'
+              : 'hover:bg-blue-500'
+              }`}
+          >
+            🎉 Bring Friend
+          </Link>
+          <Link
             to="/admin/login"
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${location.pathname === '/admin/login'
               ? 'bg-blue-800'
@@ -74,6 +84,7 @@ function App() {
       <Routes>
         <Route path="/" element={<EventForm />} />
         <Route path="/payment/:id" element={<PaymentPage />} />
+        <Route path="/bring-friend" element={<BringFriendForm />} />
         <Route path="/scanner" element={<QRScanner />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={

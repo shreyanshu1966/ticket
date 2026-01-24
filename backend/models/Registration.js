@@ -96,6 +96,63 @@ const registrationSchema = new mongoose.Schema({
     type: Number,
     default: 19900 // Amount in paise (₹199 = 19900 paise)
   },
+  isGroupBooking: {
+    type: Boolean,
+    default: false
+  },
+  ticketQuantity: {
+    type: Number,
+    default: 1,
+    min: 1
+  },
+  totalAmount: {
+    type: Number,
+    required: true
+  },
+  groupMembers: [{
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true
+    },
+    phone: {
+      type: String,
+      required: true
+    },
+    college: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    year: {
+      type: String,
+      required: true
+    },
+    ticketNumber: {
+      type: String,
+      unique: true,
+      sparse: true
+    },
+    qrCode: {
+      type: String
+    },
+    isScanned: {
+      type: Boolean,
+      default: false
+    },
+    scannedAt: {
+      type: Date
+    },
+    entryConfirmed: {
+      type: Boolean,
+      default: false
+    }
+  }],
   ticketNumber: {
     type: String,
     unique: true,
@@ -121,6 +178,41 @@ const registrationSchema = new mongoose.Schema({
   },
   lastResentAt: {
     type: Date
+  },
+  // Friend referral system
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Registration',
+    sparse: true
+  },
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  friendsReferred: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Registration'
+  }],
+  isFriendReferral: {
+    type: Boolean,
+    default: false
+  },
+  friendReferralTopUp: {
+    type: Number, // Additional amount paid for friend referral (₹100)
+    default: 0
+  },
+  hasReferredFriend: {
+    type: Boolean,
+    default: false
+  },
+  friendDiscountApplied: {
+    type: Number,
+    default: 0
+  },
+  originalAmount: {
+    type: Number,
+    default: 19900
   }
 }, {
   timestamps: true

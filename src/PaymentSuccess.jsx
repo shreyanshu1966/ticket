@@ -11,10 +11,13 @@ function PaymentSuccess({ registrationData, onStartOver }) {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            Payment Submitted!
+            {registrationData?.isGroupBooking ? 'Group Payment Submitted!' : 'Payment Submitted!'}
           </h2>
           <p className="text-gray-400 mb-6 text-sm">
-            Your payment details have been submitted for verification
+            {registrationData?.isGroupBooking ? 
+              `Your group payment for ${registrationData.ticketQuantity} tickets has been submitted for verification` :
+              'Your payment details have been submitted for verification'
+            }
           </p>
 
           {registrationData && (
@@ -23,18 +26,63 @@ function PaymentSuccess({ registrationData, onStartOver }) {
                 Submission Details
               </h3>
               <div className="space-y-2 text-sm">
+                {registrationData.isGroupBooking && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Booking Type</span>
+                    <span className="text-green-400 font-semibold">Group Booking</span>
+                  </div>
+                )}
+                {registrationData.ticketQuantity > 1 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Number of Tickets</span>
+                    <span className="text-white font-bold">{registrationData.ticketQuantity}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-400">Registration ID</span>
                   <span className="text-white font-mono text-xs">{registrationData.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Name</span>
+                  <span className="text-gray-400">Primary Name</span>
                   <span className="text-white">{registrationData.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Email</span>
                   <span className="text-white">{registrationData.email}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Total Amount</span>
+                  <span className="text-white font-bold">₹{registrationData.totalAmount ? (registrationData.totalAmount / 100) : (registrationData.amount / 100)}</span>
+                </div>
+                {registrationData.isFriendReferral && registrationData.friendDiscountApplied && (
+                  <div className="bg-green-900/30 border border-green-600/50 rounded p-3 mt-2">
+                    <div className="text-center mb-2">
+                      <span className="text-green-400 font-semibold text-xs">🎉 Friend Referral Discount Applied!</span>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Original Price:</span>
+                        <span className="text-gray-400 line-through">₹{registrationData.originalAmount / 100}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-400">Friend Discount:</span>
+                        <span className="text-green-400">-₹{registrationData.friendDiscountApplied / 100}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-green-600/30 pt-1 mt-1">
+                        <span className="text-white font-semibold">You Paid:</span>
+                        <span className="text-white font-bold">₹{registrationData.totalAmount ? (registrationData.totalAmount / 100) : (registrationData.amount / 100)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {registrationData.isGroupBooking && registrationData.ticketQuantity >= 4 && (
+                  <div className="bg-green-900/30 border border-green-600/50 rounded p-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-green-400">🎉 Buy 3 Get 1 Free Applied!</span>
+                      <span className="text-green-400 font-bold">Saved: ₹{Math.floor(registrationData.ticketQuantity / 4) * 199}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-400">Payment Status</span>
                   <span className="bg-yellow-600 text-yellow-100 px-2 py-1 rounded text-xs">
@@ -69,7 +117,10 @@ function PaymentSuccess({ registrationData, onStartOver }) {
                 <p className="text-green-400 font-semibold mb-1">Next Steps:</p>
                 <ul className="text-green-200 space-y-1 text-xs">
                   <li>• Our admin team will verify your payment within 24 hours</li>
-                  <li>• You'll receive your event ticket via email once verified</li>
+                  <li>• {registrationData?.isGroupBooking ? 
+                    'Each member will receive their individual ticket via email once verified' :
+                    'You\'ll receive your event ticket via email once verified'
+                  }</li>
                   <li>• Keep your UTR number safe for reference</li>
                   <li>• Contact support if you don't hear back within 24 hours</li>
                 </ul>

@@ -11,6 +11,9 @@ function EventForm() {
     college: '',
     year: ''
   })
+  const [ticketQuantity, setTicketQuantity] = useState(1)
+  const [isGroupBooking, setIsGroupBooking] = useState(false)
+  const [groupMembers, setGroupMembers] = useState([])
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
   const [paymentComplete, setPaymentComplete] = useState(false)
@@ -62,6 +65,47 @@ function EventForm() {
 
       setEmailCheckTimeout(timeout)
     }
+  }
+
+  // Calculate price based on quantity with buy 3 get 1 offer
+  const calculatePrice = (quantity) => {
+    const basePrice = 199
+    const freeTickets = Math.floor(quantity / 4) // For every 4 tickets, 1 is free
+    const paidTickets = quantity - freeTickets
+    return paidTickets * basePrice
+  }
+
+  // Handle ticket quantity change
+  const handleQuantityChange = (newQuantity) => {
+    setTicketQuantity(newQuantity)
+    setIsGroupBooking(newQuantity > 1)
+    
+    if (newQuantity > 1) {
+      // Initialize group members array
+      const newGroupMembers = []
+      for (let i = 1; i < newQuantity; i++) {
+        newGroupMembers.push({
+          name: '',
+          email: '',
+          phone: '',
+          college: '',
+          year: ''
+        })
+      }
+      setGroupMembers(newGroupMembers)
+    } else {
+      setGroupMembers([])
+    }
+  }
+
+  // Handle group member data change
+  const handleGroupMemberChange = (index, field, value) => {
+    const updatedMembers = [...groupMembers]
+    updatedMembers[index] = {
+      ...updatedMembers[index],
+      [field]: value
+    }
+    setGroupMembers(updatedMembers)
   }
 
   // Option 3: Check if email has pending payment
@@ -116,6 +160,41 @@ function EventForm() {
 
     if (!formData.year.trim()) errors.year = 'Academic year is required'
 
+    // Validate group members if group booking
+    if (isGroupBooking) {
+      groupMembers.forEach((member, index) => {
+        if (!member.name.trim()) {
+          errors[`member_${index}_name`] = `Member ${index + 2} name is required`
+        } else if (member.name.trim().length < 2) {
+          errors[`member_${index}_name`] = `Member ${index + 2} name must be at least 2 characters`
+        } else if (!/^[a-zA-Z\s.'-]+$/.test(member.name.trim())) {
+          errors[`member_${index}_name`] = `Member ${index + 2} name contains invalid characters`
+        }
+
+        if (!member.email.trim()) {
+          errors[`member_${index}_email`] = `Member ${index + 2} email is required`
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) {
+          errors[`member_${index}_email`] = `Please enter a valid email for Member ${index + 2}`
+        }
+
+        if (!member.phone.trim()) {
+          errors[`member_${index}_phone`] = `Member ${index + 2} phone number is required`
+        } else if (!/^\d{10}$/.test(member.phone.replace(/\D/g, ''))) {
+          errors[`member_${index}_phone`] = `Please enter a valid 10-digit phone number for Member ${index + 2}`
+        }
+
+        if (!member.college.trim()) {
+          errors[`member_${index}_college`] = `Member ${index + 2} college name is required`
+        } else if (member.college.trim().length < 3) {
+          errors[`member_${index}_college`] = `Member ${index + 2} college name must be at least 3 characters`
+        }
+
+        if (!member.year.trim()) {
+          errors[`member_${index}_year`] = `Member ${index + 2} academic year is required`
+        }
+      })
+    }
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -128,6 +207,9 @@ function EventForm() {
       college: '',
       year: ''
     })
+    setTicketQuantity(1)
+    setIsGroupBooking(false)
+    setGroupMembers([])
     setValidationErrors({})
     setError(null)
     setRegistrationData(null)
@@ -154,15 +236,21 @@ function EventForm() {
       console.log('Submitting registration...', formData)
 
       // Create registration (pending payment)
+      const registrationPayload = {
+        ...formData,
+        paymentStatus: 'pending',
+        isGroupBooking,
+        ticketQuantity,
+        totalAmount: calculatePrice(ticketQuantity) * 100, // Convert to paise
+        groupMembers: isGroupBooking ? groupMembers : []
+      }
+
       const response = await fetch(buildApiUrl('/api/registrations/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          paymentStatus: 'pending'
-        })
+        body: JSON.stringify(registrationPayload)
       })
 
       const result = await response.json()
@@ -207,12 +295,27 @@ function EventForm() {
     setShowPayment(false)
   }
 
-  const isFormValid = formData.name.trim() &&
-    formData.email.trim() &&
-    formData.phone.trim() &&
-    formData.college.trim() &&
-    formData.year.trim() &&
-    Object.keys(validationErrors).length === 0
+  const isFormValid = () => {
+    const basicFormValid = formData.name.trim() &&
+      formData.email.trim() &&
+      formData.phone.trim() &&
+      formData.college.trim() &&
+      formData.year.trim()
+    
+    if (!basicFormValid) return false
+
+    if (isGroupBooking) {
+      return groupMembers.every(member => 
+        member.name.trim() &&
+        member.email.trim() &&
+        member.phone.trim() &&
+        member.college.trim() &&
+        member.year.trim()
+      ) && Object.keys(validationErrors).length === 0
+    }
+
+    return Object.keys(validationErrors).length === 0
+  }
 
   // Handle different states of the form
   if (paymentComplete) {
@@ -324,6 +427,55 @@ function EventForm() {
           )}
 
           <div className="space-y-4">
+            {/* Ticket Quantity Selector */}
+            <div>
+              <label htmlFor="ticketQuantity" className="block text-sm font-medium text-gray-300 mb-1">
+                Number of Tickets *
+              </label>
+              <select
+                id="ticketQuantity"
+                value={ticketQuantity}
+                onChange={(e) => handleQuantityChange(parseInt(e.target.value))}
+                className="w-full px-3 py-2 bg-[#262626] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+                disabled={isProcessing}
+              >
+                <option value={1}>1 Ticket - ₹199</option>
+                <option value={2}>2 Tickets - ₹398</option>
+                <option value={3}>3 Tickets - ₹597</option>
+                <option value={4}>4 Tickets - ₹597 (Buy 3 Get 1 FREE!)</option>
+                <option value={5}>5 Tickets - ₹796 (1 Free)</option>
+                <option value={6}>6 Tickets - ₹995 (1 Free)</option>
+                <option value={7}>7 Tickets - ₹1194 (1 Free)</option>
+                <option value={8}>8 Tickets - ₹1194 (Buy 6 Get 2 FREE!)</option>
+              </select>
+              
+              {/* Pricing Display */}
+              <div className="mt-2 p-3 bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg border border-purple-600">
+                <div className="flex justify-between items-center">
+                  <span className="text-white text-sm">
+                    {ticketQuantity === 1 ? '1 Ticket' : `${ticketQuantity} Tickets`}
+                    {ticketQuantity >= 4 && (
+                      <span className="text-green-400 ml-2">
+                        ({Math.floor(ticketQuantity / 4)} FREE!)
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xl font-bold text-white">₹{calculatePrice(ticketQuantity)}</span>
+                </div>
+                {ticketQuantity >= 4 && (
+                  <div className="mt-1 text-xs text-green-400">
+                    🎉 You save ₹{Math.floor(ticketQuantity / 4) * 199}!
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Primary Member Details */}
+            <div className="border-t border-gray-600 pt-4">
+              <h3 className="text-lg font-semibold text-white mb-3">
+                {isGroupBooking ? 'Primary Member Details' : 'Your Details'}
+              </h3>
+            
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
                 Full Name *
@@ -460,12 +612,126 @@ function EventForm() {
                 <p className="mt-1 text-sm text-red-400">{validationErrors.year}</p>
               )}
             </div>
+            </div>
+
+            {/* Group Member Details */}
+            {isGroupBooking && (
+              <div className="border-t border-gray-600 pt-4">
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Additional Members ({groupMembers.length})
+                </h3>
+                
+                {groupMembers.map((member, index) => (
+                  <div key={index} className="mb-6 p-4 border border-gray-600 rounded-lg bg-[#1e1e1e]">
+                    <h4 className="text-md font-medium text-purple-400 mb-3">
+                      Member {index + 2}
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={member.name}
+                          onChange={(e) => handleGroupMemberChange(index, 'name', e.target.value)}
+                          className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors[`member_${index}_name`] ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
+                          placeholder="Enter full name"
+                          disabled={isProcessing}
+                        />
+                        {validationErrors[`member_${index}_name`] && (
+                          <p className="mt-1 text-sm text-red-400">{validationErrors[`member_${index}_name`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          value={member.email}
+                          onChange={(e) => handleGroupMemberChange(index, 'email', e.target.value)}
+                          className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors[`member_${index}_email`] ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
+                          placeholder="Enter email address"
+                          disabled={isProcessing}
+                        />
+                        {validationErrors[`member_${index}_email`] && (
+                          <p className="mt-1 text-sm text-red-400">{validationErrors[`member_${index}_email`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          value={member.phone}
+                          onChange={(e) => handleGroupMemberChange(index, 'phone', e.target.value)}
+                          className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors[`member_${index}_phone`] ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
+                          placeholder="Enter 10-digit phone number"
+                          disabled={isProcessing}
+                        />
+                        {validationErrors[`member_${index}_phone`] && (
+                          <p className="mt-1 text-sm text-red-400">{validationErrors[`member_${index}_phone`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          College/University *
+                        </label>
+                        <input
+                          type="text"
+                          value={member.college}
+                          onChange={(e) => handleGroupMemberChange(index, 'college', e.target.value)}
+                          className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors[`member_${index}_college`] ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors`}
+                          placeholder="Enter college or university name"
+                          disabled={isProcessing}
+                        />
+                        {validationErrors[`member_${index}_college`] && (
+                          <p className="mt-1 text-sm text-red-400">{validationErrors[`member_${index}_college`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Academic Year *
+                        </label>
+                        <select
+                          value={member.year}
+                          onChange={(e) => handleGroupMemberChange(index, 'year', e.target.value)}
+                          className={`w-full px-3 py-2 bg-[#262626] border ${validationErrors[`member_${index}_year`] ? 'border-red-500' : 'border-gray-600'} rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors`}
+                          disabled={isProcessing}
+                        >
+                          <option value="">Select academic year</option>
+                          <option value="1st Year">1st Year</option>
+                          <option value="2nd Year">2nd Year</option>
+                          <option value="3rd Year">3rd Year</option>
+                          <option value="4th Year">4th Year</option>
+                          <option value="Postgraduate">Postgraduate</option>
+                          <option value="PhD">PhD</option>
+                          <option value="Alumni">Alumni</option>
+                          <option value="Faculty">Faculty</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        {validationErrors[`member_${index}_year`] && (
+                          <p className="mt-1 text-sm text-red-400">{validationErrors[`member_${index}_year`]}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={isProcessing || !isFormValid}
-            className={`w-full mt-6 py-3 rounded-full text-base font-semibold transition-all duration-300 ${isProcessing || !isFormValid
+            disabled={isProcessing || !isFormValid()}
+            className={`w-full mt-6 py-3 rounded-full text-base font-semibold transition-all duration-300 ${isProcessing || !isFormValid()
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
               }`}
@@ -476,7 +742,7 @@ function EventForm() {
                 <span>Processing...</span>
               </div>
             ) : (
-              'Continue to Payment - ₹199'
+              `Continue to Payment - ₹${calculatePrice(ticketQuantity)}${ticketQuantity >= 4 ? ` (${Math.floor(ticketQuantity / 4)} FREE!)` : ''}`
             )}
           </button>
 

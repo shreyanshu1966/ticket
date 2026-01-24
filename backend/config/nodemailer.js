@@ -72,6 +72,39 @@ export const noreplyTransporter = nodemailer.createTransport({
   logger: process.env.DEBUG_EMAIL === 'true'
 })
 
+// Configure OTP transporter for no.reply@acesmitadt.com (for OTPs only)
+const otpHost = process.env.OTP_EMAIL_HOST || 'mail.acesmitadt.com'
+const otpPort = parseInt(process.env.OTP_EMAIL_PORT) || 465  // Port 465 with SSL
+const otpSecure = otpPort === 465  // SSL for port 465
+
+console.log(`📧 Configuring OTP email: ${otpHost}:${otpPort} (secure: ${otpSecure})`)
+
+export const otpTransporter = nodemailer.createTransport({
+  host: otpHost,
+  port: otpPort,
+  secure: otpSecure,
+  auth: {
+    user: process.env.OTP_EMAIL_USER || 'no.reply@acesmitadt.com',
+    pass: process.env.OTP_EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false,
+    ciphers: 'ALL'
+  },
+  // Connection settings
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 10,
+  rateDelta: 2000,
+  rateLimit: 1,
+  // Timeouts
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
+  debug: process.env.DEBUG_EMAIL === 'true',
+  logger: process.env.DEBUG_EMAIL === 'true'
+})
+
 // Verify main email configuration
 transporter.verify((error, success) => {
   if (error) {
@@ -87,6 +120,15 @@ noreplyTransporter.verify((error, success) => {
     console.log('❌ Noreply email configuration error:', error.message)
   } else {
     console.log('✅ Noreply email server is ready to send messages')
+  }
+})
+
+// Verify OTP email configuration
+otpTransporter.verify((error, success) => {
+  if (error) {
+    console.log('❌ OTP email configuration error:', error.message)
+  } else {
+    console.log('✅ OTP email server is ready to send messages')
   }
 })
 

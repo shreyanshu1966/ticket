@@ -7,8 +7,8 @@ export const config = {
 // Payment Configuration
 export const PAYMENT_CONFIG = {
   UPI_ID: 'aayushdalvi485-2@okicici', // TODO: Replace with Aayush's actual UPI ID
-  AMOUNT: 199, // Amount in rupees
-  EVENT_NAME: 'Event Registration'
+  BASE_AMOUNT: 199, // Base amount per ticket in rupees
+  EVENT_NAME: 'ACD 2026 Event Registration'
 }
 
 // API endpoints

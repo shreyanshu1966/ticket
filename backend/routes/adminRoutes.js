@@ -10,7 +10,10 @@ import {
   exportRegistrations,
   sendBulkNotification,
   sendTimingCorrection,
-  resendTickets
+  resendTickets,
+  getFriendOfferSettings,
+  toggleFriendOffer,
+  getFriendRegistrations
 } from '../controllers/adminController.js'
 
 const router = express.Router()
@@ -59,5 +62,13 @@ router.post('/notifications/timing-correction', sendTimingCorrection)
 
 // Resend tickets
 router.post('/notifications/resend-tickets', resendTickets)
+
+// Friend offer management
+router.get('/friend-offer', getFriendOfferSettings)
+router.put('/friend-offer/toggle', [
+  body('enabled').isBoolean().withMessage('enabled must be boolean'),
+  body('adminName').optional().isString()
+], toggleFriendOffer)
+router.get('/friend-registrations', getFriendRegistrations)
 
 export default router

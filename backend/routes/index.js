@@ -3,6 +3,7 @@ import registrationRoutes from './registrationRoutes.js'
 import systemRoutes from './systemRoutes.js'
 import ticketRoutes from './ticketRoutes.js'
 import adminRoutes from './adminRoutes.js'
+import friendRoutes from './friendRoutes.js'
 
 const router = express.Router()
 
@@ -17,6 +18,9 @@ router.use('/api/tickets', ticketRoutes)
 
 // Admin routes
 router.use('/api/admin', adminRoutes)
+
+// Friend referral routes
+router.use('/api/friend', friendRoutes)
 
 // Legacy endpoints for backward compatibility (only specific endpoints to avoid duplication)
 router.post('/api/create-order', (req, res, next) => {

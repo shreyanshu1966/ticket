@@ -1,6 +1,6 @@
 import { validationResult } from 'express-validator'
 import Registration from '../models/Registration.js'
-import { sendConfirmationEmail } from '../services/emailService.js'
+import { sendConfirmationEmail, sendGroupConfirmationEmails } from '../services/emailService.js'
 
 // Get all registrations
 export const getAllRegistrations = async (req, res) => {
@@ -257,9 +257,9 @@ export const createRegistration = async (req, res) => {
       })
     }
 
-    const { name, email, phone, college, year } = req.body
+    const { name, email, phone, college, year, isGroupBooking, ticketQuantity, totalAmount, groupMembers } = req.body
 
-    // Check if email already exists
+    // Check if email already exists (check both primary and group members)
     const existingRegistration = await Registration.findOne({ email: email.toLowerCase() })
     if (existingRegistration) {
       console.log(`⚠️ Duplicate registration attempt for email: ${email}`)
@@ -267,6 +267,30 @@ export const createRegistration = async (req, res) => {
         success: false,
         message: 'Email already registered for this event'
       })
+    }
+
+    // Check for duplicate emails in group members
+    if (isGroupBooking && groupMembers && groupMembers.length > 0) {
+      const allEmails = [email.toLowerCase(), ...groupMembers.map(member => member.email.toLowerCase())]
+      const uniqueEmails = [...new Set(allEmails)]
+      
+      if (allEmails.length !== uniqueEmails.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Duplicate email addresses found in the group'
+        })
+      }
+
+      // Check if any group member email already exists in database
+      for (const memberEmail of groupMembers.map(m => m.email.toLowerCase())) {
+        const existingMember = await Registration.findOne({ email: memberEmail })
+        if (existingMember) {
+          return res.status(400).json({
+            success: false,
+            message: `Email ${memberEmail} is already registered for this event`
+          })
+        }
+      }
     }
 
     // Create registration with pending payment
@@ -278,7 +302,17 @@ export const createRegistration = async (req, res) => {
       year,
       paymentStatus: 'pending',
       paymentMethod: 'upi',
-      amount: 19900 // ₹199 in paise
+      isGroupBooking: isGroupBooking || false,
+      ticketQuantity: ticketQuantity || 1,
+      totalAmount: totalAmount || 19900,
+      amount: totalAmount || 19900,
+      groupMembers: isGroupBooking ? groupMembers.map(member => ({
+        name: member.name.trim(),
+        email: member.email.trim().toLowerCase(),
+        phone: member.phone.replace(/\D/g, ''),
+        college: member.college.trim(),
+        year: member.year
+      })) : []
     })
 
     await registration.save()
@@ -286,7 +320,7 @@ export const createRegistration = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Registration created successfully. Please complete payment.',
+      message: `${isGroupBooking ? 'Group registration' : 'Registration'} created successfully. Please complete payment.`,
       data: {
         id: registration._id,
         name: registration.name,
@@ -295,6 +329,9 @@ export const createRegistration = async (req, res) => {
         year: registration.year,
         registrationDate: registration.registrationDate,
         paymentStatus: registration.paymentStatus,
+        isGroupBooking: registration.isGroupBooking,
+        ticketQuantity: registration.ticketQuantity,
+        totalAmount: registration.totalAmount,
         amount: registration.amount
       }
     })
@@ -408,16 +445,23 @@ export const verifyPayment = async (req, res) => {
       setImmediate(async () => {
         try {
           console.log(`📧 Sending ticket email in background for ${registration.email}...`)
-          const emailResult = await sendConfirmationEmail(registration)
+          
+          let emailResult
+          if (registration.isGroupBooking) {
+            console.log(`📧 Sending group confirmation emails for ${registration.ticketQuantity} tickets`)
+            emailResult = await sendGroupConfirmationEmails(registration)
+          } else {
+            emailResult = await sendConfirmationEmail(registration)
+          }
 
           if (emailResult.success) {
-            console.log(`✅ Ticket email sent successfully to ${registration.email}`)
+            console.log(`✅ Ticket email(s) sent successfully to ${registration.email}`)
 
             // Update registration with ticket details
-            if (emailResult.ticketNumber) {
+            if (emailResult.ticketNumber || emailResult.primaryTicketNumber) {
               const updatedReg = await Registration.findById(registrationId)
               if (updatedReg) {
-                updatedReg.ticketNumber = emailResult.ticketNumber
+                updatedReg.ticketNumber = emailResult.ticketNumber || emailResult.primaryTicketNumber
                 updatedReg.qrCode = emailResult.qrCode
                 updatedReg.ticketGenerated = true
                 updatedReg.emailSentAt = new Date()

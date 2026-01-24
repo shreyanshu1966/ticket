@@ -6,6 +6,8 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [friendOffer, setFriendOffer] = useState(null)
+  const [updatingOffer, setUpdatingOffer] = useState(false)
   const navigate = useNavigate()
 
   const getAuthHeaders = () => {
@@ -41,6 +43,50 @@ const AdminDashboard = () => {
     }
   }
 
+  const fetchFriendOfferSettings = async () => {
+    try {
+      const response = await fetch(buildApiUrl('/api/admin/friend-offer'), {
+        headers: getAuthHeaders()
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setFriendOffer(data.data)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching friend offer settings:', err)
+    }
+  }
+
+  const toggleFriendOffer = async () => {
+    if (!friendOffer) return
+
+    setUpdatingOffer(true)
+    try {
+      const response = await fetch(buildApiUrl('/api/admin/friend-offer/toggle'), {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          enabled: !friendOffer.enabled,
+          adminName: 'Admin User'
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setFriendOffer(prev => ({ ...prev, enabled: data.data.enabled }))
+      } else {
+        setError('Failed to update friend offer setting')
+      }
+    } catch (err) {
+      setError('Error updating friend offer setting')
+    } finally {
+      setUpdatingOffer(false)
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
     navigate('/admin/login')
@@ -48,6 +94,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchStats()
+    fetchFriendOfferSettings()
   }, [])
 
   if (loading) {
@@ -87,7 +134,7 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -103,6 +150,50 @@ const AdminDashboard = () => {
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
                       {stats?.totalRegistrations || 0}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">🎫</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Tickets
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats?.totalTickets || 0}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">👨‍👩‍👧‍👦</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Group Bookings
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats?.groupBookings || 0}
                     </dd>
                   </dl>
                 </div>
@@ -170,6 +261,11 @@ const AdminDashboard = () => {
                     <dd className="text-lg font-medium text-gray-900">
                       ₹{stats?.totalRevenue || 0}
                     </dd>
+                    {stats?.totalSavings > 0 && (
+                      <dd className="text-xs text-green-600">
+                        ₹{stats?.totalSavings || 0} saved via offers
+                      </dd>
+                    )}
                   </dl>
                 </div>
               </div>
@@ -315,6 +411,61 @@ const AdminDashboard = () => {
             Send Notifications
           </button>
         </div>
+
+        {/* Friend Offer Settings */}
+        {friendOffer && (
+          <div className="mt-8 bg-white overflow-hidden shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                🎉 Friend Offer Settings
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Control the "Bring Your Friend" offer availability
+              </p>
+            </div>
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium text-gray-900 mr-3">
+                      Friend Offer Status
+                    </span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      friendOffer.enabled 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {friendOffer.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Friends get ₹{friendOffer.topUpDisplay || '100'} off (Pay ₹99 instead of ₹199)
+                  </p>
+                  {friendOffer.statistics && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      <span className="mr-4">Total: {friendOffer.statistics.totalFriendReferrals}</span>
+                      <span className="mr-4">Completed: {friendOffer.statistics.completedFriendPayments}</span>
+                      <span>Pending: {friendOffer.statistics.pendingFriendPayments}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={toggleFriendOffer}
+                  disabled={updatingOffer}
+                  className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                    friendOffer.enabled ? 'bg-blue-600' : 'bg-gray-200'
+                  } ${updatingOffer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                      friendOffer.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

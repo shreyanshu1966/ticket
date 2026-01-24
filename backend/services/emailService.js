@@ -1,4 +1,4 @@
-import transporter, { noreplyTransporter } from '../config/nodemailer.js'
+import transporter, { noreplyTransporter, otpTransporter } from '../config/nodemailer.js'
 import { generateTicketNumber, generateQRCodeBuffer, generateTicketHTML } from './ticketService.js'
 import fs from 'fs'
 import path from 'path'
@@ -147,7 +147,19 @@ Event Organization Team
 const generateTicketEmail = async (registrationData) => {
   // Convert Mongoose document to plain object if needed
   const regData = registrationData.toObject ? registrationData.toObject() : registrationData
-  const { name, email, _id, college, year, amount, ticketNumber: existingTicketNumber } = regData
+  const { 
+    name, 
+    email, 
+    _id, 
+    college, 
+    year, 
+    amount, 
+    ticketNumber: existingTicketNumber,
+    isGroupMember = false,
+    groupPrimaryEmail = null,
+    memberNumber = null,
+    totalMembers = null
+  } = regData
 
   // Use existing ticket number if available, otherwise generate new one
   const ticketNumber = existingTicketNumber || generateTicketNumber()
@@ -171,10 +183,26 @@ const generateTicketEmail = async (registrationData) => {
     ticketNumber
   })
 
+  const subjectText = isGroupMember ? 
+    `🎫 Your ACD 2026 E-Ticket (Group Booking #${memberNumber}/${totalMembers})` :
+    'Your E-Ticket - ACD 2026'
+
+  const emailTitle = isGroupMember ? 
+    `🎫 E-Ticket for ACD 2026 (Group Member ${memberNumber})` :
+    '🎫 Your E-Ticket - ACD 2026'
+
+  const welcomeText = isGroupMember ?
+    `Dear ${name},\n\nHere is your individual E-Ticket for ACD 2026! This ticket is part of a group booking organized by ${groupPrimaryEmail}.` :
+    `Dear ${name},\n\nThank you for your registration! Here is your E-Ticket for ACD 2026.`
+
+  const additionalInfo = isGroupMember ?
+    `\n• This is ticket ${memberNumber} of ${totalMembers} in your group\n• Each member has received their own individual ticket\n• Group booking managed by: ${groupPrimaryEmail}` :
+    ''
+
   return {
     ticketNumber,
     qrCodeBuffer,
-    subject: 'Your E-Ticket - ACD 2026',
+    subject: subjectText,
     html: `
       <!DOCTYPE html>
       <html>
@@ -184,32 +212,46 @@ const generateTicketEmail = async (registrationData) => {
         <title>ACD 2026 E-Ticket</title>
       </head>
       <body style="margin: 0; padding: 0;">
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
+            <h1>${emailTitle}</h1>
+            <p>Welcome to ACD 2026!</p>
+            ${isGroupMember ? `<p style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 20px;">Group Member ${memberNumber} of ${totalMembers}</p>` : ''}
+          </div>
+        </div>
         ${ticketHTML}
       </body>
       </html>
     `,
     text: `
-ACD 2026 E-Ticket
+ACD 2026 E-Ticket ${isGroupMember ? `(Group Member ${memberNumber}/${totalMembers})` : ''}
 
-Dear ${name},
-
-Your E-Ticket for ACD 2026
+${welcomeText}
 
 Ticket Number: ${ticketNumber}
 Name: ${name}
-Event: ACD 2026 - ACES Community Day
+Event: ACD 2026 - ACES Community Day${additionalInfo}
+
+Important Instructions:
+• Present this QR code at the entrance
+• Arrive at least 15 minutes early
+• Bring a valid photo ID
+• Contact support for any issues
+
+Event Details:
 Date: January 28-29, 2026
-Time: 8:00 AM - 5:00 PM
-Location: Urmila Tai Karad Auditorium, MIT ADT Pune
+Time: 8:00 AM - 5:00 PM  
+Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
 
-Please show this ticket at the venue entry.
+For support, contact:
+Aayush: 9226750350
+Ishan: 9552448038
 
+Thank you for joining ACD 2026!
 Event Organization Team
     `
   }
 }
-
-
 
 // Pending Payment Email Template - Professional Design (Matching Ticket Style)
 const generatePendingPaymentEmail = (registrationData) => {
@@ -517,6 +559,138 @@ const sendEmailWithRetry = async (mailOptions, maxRetries = 3) => {
 };
 
 // Function to send confirmation emails
+// Send confirmation emails for group bookings
+export const sendGroupConfirmationEmails = async (registrationData) => {
+  try {
+    console.log('📧 Starting group confirmation emails for registration:', registrationData._id)
+    
+    const fromAddress = 'ACD 2026 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
+    const results = []
+
+    // 1. Send emails to primary member
+    console.log('📧 Sending emails to primary member:', registrationData.email)
+    const primaryResult = await sendConfirmationEmail(registrationData)
+    results.push({
+      email: registrationData.email,
+      type: 'primary',
+      ...primaryResult
+    })
+
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // 2. Send individual tickets to each group member
+    if (registrationData.isGroupBooking && registrationData.groupMembers) {
+      for (let i = 0; i < registrationData.groupMembers.length; i++) {
+        const member = registrationData.groupMembers[i]
+        console.log(`📧 Sending ticket to group member ${i + 2}:`, member.email)
+
+        try {
+          // Generate individual ticket number and QR for this member
+          const memberTicketNumber = generateTicketNumber()
+          const memberQrData = {
+            ticketNumber: memberTicketNumber,
+            registrationId: registrationData._id.toString(),
+            name: member.name,
+            email: member.email,
+            eventCode: 'ACD-2026',
+            generatedAt: new Date().toISOString(),
+            memberIndex: i + 1,
+            groupBooking: true
+          }
+          
+          const memberQrCodeBuffer = await generateQRCodeBuffer(memberQrData)
+
+          // Create member-specific ticket data
+          const memberTicketData = {
+            _id: registrationData._id,
+            name: member.name,
+            email: member.email,
+            college: member.college,
+            year: member.year,
+            amount: registrationData.amount,
+            ticketNumber: memberTicketNumber,
+            isGroupMember: true,
+            groupPrimaryEmail: registrationData.email,
+            memberNumber: i + 2,
+            totalMembers: registrationData.ticketQuantity
+          }
+
+          const ticketEmail = await generateTicketEmail(memberTicketData)
+          
+          const memberTicketInfo = await sendEmailWithRetry({
+            from: fromAddress,
+            to: member.email,
+            subject: `🎫 Your ACD 2026 E-Ticket (Group Booking)`,
+            html: ticketEmail.html,
+            text: ticketEmail.text,
+            attachments: [
+              {
+                filename: `ACD-2026-Ticket-${memberTicketNumber}.png`,
+                content: memberQrCodeBuffer,
+                contentType: 'image/png',
+                cid: 'ticket-qr-code'
+              },
+              {
+                filename: 'ACES_LOGO.png',
+                path: path.join(__dirname, '../../public/ACES_LOGO-.png'),
+                contentType: 'image/png',
+                cid: 'aces-logo'
+              }
+            ]
+          })
+
+          // Update group member with ticket info in database
+          registrationData.groupMembers[i].ticketNumber = memberTicketNumber
+          registrationData.groupMembers[i].qrCode = memberQrCodeBuffer.toString('base64')
+
+          results.push({
+            email: member.email,
+            type: 'group_member',
+            memberIndex: i + 1,
+            success: true,
+            messageId: memberTicketInfo.messageId,
+            ticketNumber: memberTicketNumber
+          })
+
+          console.log(`✅ Ticket sent to group member ${i + 2}:`, memberTicketInfo.messageId)
+
+          // Add delay between member emails
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (memberError) {
+          console.error(`❌ Failed to send ticket to group member ${i + 2} (${member.email}):`, memberError)
+          results.push({
+            email: member.email,
+            type: 'group_member',
+            memberIndex: i + 1,
+            success: false,
+            error: memberError.message
+          })
+        }
+      }
+    }
+
+    // Save updated registration with group member ticket numbers
+    await registrationData.save()
+
+    const successCount = results.filter(r => r.success).length
+    const totalCount = results.length
+
+    return {
+      success: successCount > 0,
+      totalSent: successCount,
+      totalAttempted: totalCount,
+      results: results,
+      primaryTicketNumber: primaryResult.ticketNumber
+    }
+
+  } catch (error) {
+    console.error('❌ Group email sending failed:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 export const sendConfirmationEmail = async (registrationData) => {
   try {
     // Check if emails were already sent for this registration
@@ -973,6 +1147,249 @@ This is an automated email. For support, contact mail@acesmitadt.com
     }
   } catch (error) {
     console.error('❌ Timing correction email failed:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Friend OTP Email Template
+export const sendFriendOTPEmail = async (email, userName, otp) => {
+  try {
+    const fromAddress = 'ACD 2026 OTP <' + (process.env.OTP_EMAIL_USER || 'no.reply@acesmitadt.com') + '>'
+    
+    const mailOptions = {
+      from: fromAddress,
+      to: email,
+      subject: 'Friend Referral OTP - ACD 2026',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .otp-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border-left: 4px solid #667eea; }
+            .otp { font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 4px; font-family: monospace; }
+            .highlight { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Friend Referral OTP</h1>
+              <p>ACD 2026 - Bring Your Friend Offer</p>
+            </div>
+            
+            <div class="content">
+              <p>Dear <strong>${userName}</strong>,</p>
+              
+              <p>Someone wants to register for ACD 2026 using your referral and enjoy <strong>₹100 discount</strong>!</p>
+              
+              <div class="highlight">
+                <h3>🎯 Bring Your Friend Offer</h3>
+                <p><strong>Your friend gets:</strong> ₹100 discount (Pay only ₹99 instead of ₹199)</p>
+                <p><strong>Valid for:</strong> Individual registrations only</p>
+              </div>
+              
+              <p>To proceed with your friend's registration, please use the following OTP:</p>
+              
+              <div class="otp-box">
+                <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Your OTP Code:</p>
+                <div class="otp">${otp}</div>
+                <p style="margin: 10px 0 0 0; color: #666; font-size: 12px;">Valid for 10 minutes</p>
+              </div>
+              
+              <p><strong>Important:</strong></p>
+              <ul>
+                <li>This OTP is valid for <strong>10 minutes</strong> only</li>
+                <li>You can refer only <strong>1 friend</strong> with this offer</li>
+                <li>Your friend must complete payment of ₹99 for the ticket</li>
+                <li>If you didn't request this, please ignore this email</li>
+              </ul>
+              
+              <div class="footer">
+                <p>Best regards,<br/>ACD 2026 Team</p>
+                <p><small>This is an automated email. Please do not reply to this message.</small></p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Friend Referral OTP - ACD 2026
+
+Dear ${userName},
+
+Someone wants to register for ACD 2026 using your referral and enjoy ₹100 discount!
+
+🎯 BRING YOUR FRIEND OFFER:
+- Your friend gets: ₹100 discount (Pay only ₹99 instead of ₹199)
+- Valid for: Individual registrations only
+
+Your OTP Code: ${otp}
+Valid for: 10 minutes
+
+IMPORTANT:
+- This OTP is valid for 10 minutes only
+- You can refer only 1 friend with this offer
+- Your friend must complete payment of ₹99 for the ticket
+- If you didn't request this, please ignore this email
+
+Best regards,
+ACD 2026 Team
+      `
+    }
+
+    const info = await otpTransporter.sendMail(mailOptions)
+    return { success: true, messageId: info.messageId }
+  } catch (error) {
+    console.error('❌ Friend OTP email failed:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Friend Registration Confirmation Email
+export const sendFriendRegistrationConfirmation = async (friendEmail, friendName, referrerName, discountAmount) => {
+  try {
+    const fromAddress = 'ACD 2026 Event <' + (process.env.EMAIL_FROM || 'noreply@acesmitadt.com') + '>'
+    
+    const mailOptions = {
+      from: fromAddress,
+      to: friendEmail,
+      subject: 'Friend Referral Registration - ACD 2026',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .offer-box { background: linear-gradient(135deg, #10B981 0%, #22c55e 100%); color: white; padding: 25px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .pricing { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981; }
+            .price-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+            .price-row:last-child { border-bottom: none; font-weight: bold; font-size: 18px; color: #10B981; }
+            .event-info { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Friend Referral Success!</h1>
+              <p>Welcome to ACD 2026</p>
+            </div>
+            
+            <div class="content">
+              <p>Dear <strong>${friendName}</strong>,</p>
+              
+              <p>Great news! Thanks to your friend <strong>${referrerName}</strong>, you've been successfully registered for ACD 2026 with a special friend discount!</p>
+              
+              <div class="offer-box">
+                <h2 style="margin: 0 0 10px 0;">🎯 Friend Discount Applied!</h2>
+                <p style="margin: 0; font-size: 18px;">You saved ₹100 with this referral!</p>
+              </div>
+              
+              <div class="pricing">
+                <h3 style="margin: 0 0 15px 0; color: #333;">Your Pricing:</h3>
+                <div class="price-row">
+                  <span>Original Price:</span>
+                  <span style="text-decoration: line-through; color: #666;">₹199</span>
+                </div>
+                <div class="price-row">
+                  <span>Friend Discount:</span>
+                  <span style="color: #10B981;">-₹100</span>
+                </div>
+                <div class="price-row">
+                  <span>Amount to Pay:</span>
+                  <span>₹99</span>
+                </div>
+              </div>
+              
+              <p><strong>Next Steps:</strong></p>
+              <ol>
+                <li>Complete your payment of <strong>₹99</strong></li>
+                <li>Admin will verify your payment</li>
+                <li>You'll receive your E-ticket via email</li>
+                <li>Present your QR code at the event for entry</li>
+              </ol>
+              
+              <div class="event-info">
+                <h3>🎪 Event Information</h3>
+                <p><strong>Event:</strong> ACD 2026 - ACES Community Day</p>
+                <p><strong>Dates:</strong> January 28-29, 2026</p>
+                <p><strong>Venue:</strong> Urmila Tai Karad Auditorium, MIT ADT Pune</p>
+                <p><strong>Time:</strong> 8:00 AM - 5:00 PM</p>
+              </div>
+              
+              <p><strong>Important Notes:</strong></p>
+              <ul>
+                <li>This is a special friend referral registration</li>
+                <li>Payment verification may take up to 24 hours</li>
+                <li>You'll receive a separate email with your ticket after payment verification</li>
+                <li>Make sure to thank your friend <strong>${referrerName}</strong> for the referral! 😊</li>
+              </ul>
+              
+              <div class="footer">
+                <p>Thank you for joining ACD 2026!</p>
+                <p>Best regards,<br/>ACD 2026 Team</p>
+                <p><small>For support, contact us at mail@acesmitadt.com</small></p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Friend Referral Registration - ACD 2026
+
+Dear ${friendName},
+
+Great news! Thanks to your friend ${referrerName}, you've been successfully registered for ACD 2026 with a special friend discount!
+
+🎯 FRIEND DISCOUNT APPLIED!
+You saved ₹100 with this referral!
+
+YOUR PRICING:
+Original Price: ₹199 (crossed out)
+Friend Discount: -₹100
+Amount to Pay: ₹99
+
+NEXT STEPS:
+1. Complete your payment of ₹99
+2. Admin will verify your payment
+3. You'll receive your E-ticket via email
+4. Present your QR code at the event for entry
+
+EVENT INFORMATION:
+Event: ACD 2026 - ACES Community Day
+Dates: January 28-29, 2026
+Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
+Time: 8:00 AM - 5:00 PM
+
+IMPORTANT NOTES:
+- This is a special friend referral registration
+- Payment verification may take up to 24 hours
+- You'll receive a separate email with your ticket after payment verification
+- Make sure to thank your friend ${referrerName} for the referral! 😊
+
+Thank you for joining ACD 2026!
+
+Best regards,
+ACD 2026 Team
+
+For support, contact us at mail@acesmitadt.com
+      `
+    }
+
+    const info = await transporter.sendMail(mailOptions)
+    return { success: true, messageId: info.messageId }
+  } catch (error) {
+    console.error('❌ Friend registration confirmation email failed:', error)
     return { success: false, error: error.message }
   }
 }
