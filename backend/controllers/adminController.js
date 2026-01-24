@@ -6,13 +6,21 @@ import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTim
 export const getDashboardStats = async (req, res) => {
   try {
     // Count total individuals (individual registrations + group leaders + group members)
+    // Handle legacy data where isGroupBooking might not exist
     const totalRegistrationsStats = await Registration.aggregate([
       {
         $group: {
           _id: null,
           individualRegistrations: {
             $sum: {
-              $cond: [{ $eq: ['$isGroupBooking', false] }, 1, 0]
+              $cond: [
+                { $or: [
+                  { $eq: ['$isGroupBooking', false] },
+                  { $eq: [{ $type: '$isGroupBooking' }, 'missing'] }
+                ]},
+                1,
+                0
+              ]
             }
           },
           groupLeaders: {
@@ -52,6 +60,7 @@ export const getDashboardStats = async (req, res) => {
     const groupBookings = await Registration.countDocuments({ isGroupBooking: true })
     
     // Calculate total tickets - only count completed/verified payments
+    // Handle legacy data where ticketQuantity might not exist (default to 1)
     const ticketStats = await Registration.aggregate([
       {
         $match: {
@@ -61,7 +70,11 @@ export const getDashboardStats = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalTickets: { $sum: '$ticketQuantity' }
+          totalTickets: { 
+            $sum: { 
+              $ifNull: ['$ticketQuantity', 1]
+            }
+          }
         }
       }
     ])
