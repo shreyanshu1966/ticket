@@ -1,4 +1,17 @@
 import http from 'http';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from backend/.env
+dotenv.config({ path: join(__dirname, 'backend', '.env') });
+
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin123';
+
+console.log(`Using ADMIN_TOKEN from .env: ${ADMIN_TOKEN}`);
 
 const options = {
   hostname: 'localhost',
@@ -6,7 +19,7 @@ const options = {
   path: '/api/admin/dashboard/stats',
   method: 'GET',
   headers: {
-    'Authorization': 'Bearer admin123'
+    'Authorization': `Bearer ${ADMIN_TOKEN}`
   }
 };
 
