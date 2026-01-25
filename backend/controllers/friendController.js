@@ -147,14 +147,14 @@ export const verifyExistingUser = async (req, res) => {
       $or: [
         { email: identifier.toLowerCase() },
         { ticketNumber: identifier }
-      ],
-      paymentStatus: 'completed',
-      isGroupBooking: false,
-      isFriendReferral: false,
-      hasReferredFriend: false
+      ]
     })
 
-    if (!existingUser) {
+    if (!existingUser || 
+        existingUser.paymentStatus !== 'completed' || 
+        existingUser.isGroupBooking || 
+        existingUser.isFriendReferral || 
+        existingUser.hasReferredFriend) {
       return res.status(404).json({
         success: false,
         message: 'User not found or not eligible for friend referral'
@@ -317,16 +317,32 @@ export const registerFriend = async (req, res) => {
 
     const { referrerEmail, friend } = req.body
 
-    // Verify referrer exists and is eligible
-    const referrer = await Registration.findOne({
+    // Security Check: Ensure OTP was verified recently (e.g., within 15 mins)
+    // This prevents bypassing the OTP step by calling this endpoint directly
+    const recentVerifiedOTP = await OTP.findOne({
       email: referrerEmail.toLowerCase(),
-      paymentStatus: 'completed',
-      isGroupBooking: false,
-      isFriendReferral: false,
-      hasReferredFriend: false
+      purpose: 'friend_invitation',
+      isUsed: true,
+      usedAt: { $gte: new Date(Date.now() - 15 * 60 * 1000) }
     })
 
-    if (!referrer) {
+    if (!recentVerifiedOTP) {
+      return res.status(403).json({
+        success: false,
+        message: 'Session expired or unauthorized. Please verify OTP again.'
+      })
+    }
+
+    // Verify referrer exists and is eligible
+    const referrer = await Registration.findOne({
+      email: referrerEmail.toLowerCase()
+    })
+
+    if (!referrer || 
+        referrer.paymentStatus !== 'completed' || 
+        referrer.isGroupBooking || 
+        referrer.isFriendReferral || 
+        referrer.hasReferredFriend) {
       return res.status(400).json({
         success: false,
         message: 'Referrer not found or not eligible'
