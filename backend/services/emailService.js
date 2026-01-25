@@ -1523,49 +1523,6 @@ const generateBringFriendPromotionEmail = (registrationData) => {
                 </table>
               </div>
 
-              <!-- Benefits Section -->
-              <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 20px; margin: 25px 0;">
-                <h3 style="margin: 0 0 16px 0; color: #a855f7; font-size: 15px; font-weight: 600;">✨ Why Your Friends Should Join</h3>
-                
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                  <tr>
-                    <td width="32" valign="top" style="padding: 8px 0;">
-                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🎓</div>
-                    </td>
-                    <td style="padding: 8px 0 8px 12px;">
-                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Network with Industry Leaders</div>
-                      <div style="color: #9ca3af; font-size: 12px;">Connect with tech professionals and innovators</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td width="32" valign="top" style="padding: 8px 0;">
-                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🚀</div>
-                    </td>
-                    <td style="padding: 8px 0 8px 12px;">
-                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Hands-on Workshops</div>
-                      <div style="color: #9ca3af; font-size: 12px;">Learn cutting-edge technologies and skills</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td width="32" valign="top" style="padding: 8px 0;">
-                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🏆</div>
-                    </td>
-                    <td style="padding: 8px 0 8px 12px;">
-                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Exciting Competitions</div>
-                      <div style="color: #9ca3af; font-size: 12px;">Participate in hackathons and win prizes</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td width="32" valign="top" style="padding: 8px 0;">
-                      <div style="width: 28px; height: 28px; background: rgba(168, 85, 247, 0.15); border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px;">🤝</div>
-                    </td>
-                    <td style="padding: 8px 0 8px 12px;">
-                      <div style="color: #d1d5db; font-size: 13px; font-weight: 600; margin-bottom: 2px;">Community Building</div>
-                      <div style="color: #9ca3af; font-size: 12px;">Join a vibrant community of like-minded individuals</div>
-                    </td>
-                  </tr>
-                </table>
-              </div>
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
@@ -1690,12 +1647,6 @@ As a valued registered attendee of ACD 2026, we're excited to offer you an exclu
 🎁 BRING A FRIEND OFFER:
 Your friends can register for only ₹99 instead of ₹199!
 That's a massive ₹100 savings!
-
-✨ WHY YOUR FRIENDS SHOULD JOIN:
-• Network with Industry Leaders - Connect with tech professionals and innovators
-• Hands-on Workshops - Learn cutting-edge technologies and skills
-• Exciting Competitions - Participate in hackathons and win amazing prizes
-• Community Building - Join a vibrant community of like-minded individuals
 
 📋 HOW IT WORKS:
 1. Share this offer with friends who haven't registered yet
