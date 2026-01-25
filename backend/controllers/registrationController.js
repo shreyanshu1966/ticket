@@ -81,7 +81,9 @@ export const registerDirect = async (req, res) => {
       phone: phone.replace(/\D/g, ''),
       college: college.trim(),
       year,
-      paymentStatus: 'completed' // No payment required
+      paymentStatus: 'completed', // No payment required
+      totalAmount: 19900, // Default amount for direct registration
+      amount: 19900
     })
 
     await registration.save()
@@ -366,6 +368,11 @@ export const submitPayment = async (req, res) => {
       })
     }
 
+    // Fix for missing totalAmount in legacy data
+    if (!registration.totalAmount) {
+      registration.totalAmount = registration.amount || 19900
+    }
+
     if (registration.paymentStatus !== 'pending') {
       return res.status(400).json({
         success: false,
@@ -423,6 +430,11 @@ export const verifyPayment = async (req, res) => {
       })
     }
 
+    // Fix for missing totalAmount in legacy data
+    if (!registration.totalAmount) {
+      registration.totalAmount = registration.amount || 19900
+    }
+
     if (registration.paymentStatus !== 'paid_awaiting_verification') {
       return res.status(400).json({
         success: false,
@@ -444,6 +456,12 @@ export const verifyPayment = async (req, res) => {
           const referrer = await Registration.findById(registration.referredBy)
           if (referrer && !referrer.hasReferredFriend) {
             referrer.hasReferredFriend = true
+            
+            // Fix for missing totalAmount in legacy data
+            if (!referrer.totalAmount) {
+              referrer.totalAmount = referrer.amount || 19900
+            }
+            
             await referrer.save()
             console.log(`✅ Updated referrer ${referrer.email} - hasReferredFriend set to true`)
           }
