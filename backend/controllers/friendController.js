@@ -468,6 +468,12 @@ export const registerFriend = async (req, res) => {
 
     // Add friend to referrer's list (but don't mark as referred until payment is verified)
     referrer.friendsReferred.push(friendRegistration._id)
+    
+    // Ensure referrer has totalAmount field (for backward compatibility)
+    if (!referrer.totalAmount) {
+      referrer.totalAmount = referrer.amount || 19900
+    }
+    
     await referrer.save()
 
     // Send confirmation email
