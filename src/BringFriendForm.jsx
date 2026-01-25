@@ -74,7 +74,7 @@ const BringFriendForm = () => {
       if (result.success) {
         setEligibleUser(result.data)
         setStep(2)
-        setResendTimer(60)
+        setResendTimer(180)
         await sendOTP()
       } else {
         setError(result.message || 'User not eligible for friend referral')
@@ -98,7 +98,7 @@ const BringFriendForm = () => {
 
       if (result.success) {
         setOtpSent(true)
-        setResendTimer(60)
+        setResendTimer(180)
       } else {
         setError(result.message || 'Failed to send OTP')
       }
