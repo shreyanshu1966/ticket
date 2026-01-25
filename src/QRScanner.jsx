@@ -11,6 +11,9 @@ const QRScanner = () => {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [entryConfirmed, setEntryConfirmed] = useState(false)
+  
+  // Multi-day event support
+  const [selectedDay, setSelectedDay] = useState(1) // Default to Day 1
 
   // Enhanced camera controls
   const [torch, setTorch] = useState(false)
@@ -131,42 +134,70 @@ const QRScanner = () => {
     setSuccessMessage('')
 
     try {
-      const response = await fetch(`${config.API_BASE_URL}/api/tickets/verify`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/tickets/verify-multi-day`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ qrData })
+        body: JSON.stringify({ 
+          qrData,
+          eventDay: selectedDay 
+        })
       })
 
-      // Check if response is ok before trying to parse JSON
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`)
+      let result;
+      try {
+        result = await response.json()
+      } catch (e) {
+        // If response is not JSON
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`)
+        }
       }
 
-      const result = await response.json()
+      // Check if response is ok, but allow processing for duplicate entry (400)
+      if (!response.ok) {
+        if (response.status === 400 && result && result.error === 'DUPLICATE_DAY_ENTRY') {
+          // Allow execution to proceed to handle duplicate entry specifically
+        } else {
+          throw new Error(`Server error: ${response.status}`)
+        }
+      }
 
       if (result.success) {
-        setVerificationResult(result.data)
-        setSuccessMessage('Ticket verified successfully!')
+        setVerificationResult({
+          ...result.data,
+          validForDay: selectedDay,
+          hasEntered: false
+        })
+        setSuccessMessage(`Ticket verified successfully for Day ${selectedDay}!`)
       } else {
-        // Enhanced error handling for duplicate entries
-        if (result.error === 'DUPLICATE_ENTRY' && result.data) {
-          const errorMsg = result.data.warningMessage || result.message
-          setError(`⚠️ DUPLICATE ENTRY: ${errorMsg}`)
+        // Enhanced error handling for multi-day duplicate entries
+        if (result.error === 'DUPLICATE_DAY_ENTRY' && result.data) {
+          // Don't show error for duplicates - show ticket details instead
+          setError('') // Clear any previous errors
+          setSuccessMessage('') // Clear success message
 
-          // Show additional details in verification result for display
+          // Show verification result with duplicate entry information
           setVerificationResult({
-            ...result.data,
+            name: result.data.attendeeName || 'Unknown',
+            email: result.data.attendeeEmail || 'Unknown',
+            college: result.data.attendeeCollege || 'Unknown', 
+            year: result.data.attendeeYear || 'Unknown',
+            ticketNumber: result.data.ticketNumber || 'Unknown',
+            amount: 49900, // Default amount, may need to get from backend
             hasEntered: true,
-            entryTime: result.data.scannedAt,
-            isDuplicate: true
+            entryTime: result.data.entryDate,
+            entryTimeFormatted: result.data.entryDateFormatted,
+            isDuplicate: true,
+            day: selectedDay,
+            isGroupMember: result.data.isGroupMember || false
           })
 
-          console.warn('🚫 Duplicate entry attempt:', {
-            name: result.data.name,
-            ticketNumber: result.data.ticketNumber,
-            previousEntry: result.data.scannedAtFormatted
+          console.warn(`🚫 Duplicate Day ${selectedDay} entry attempt:`, {
+            day: selectedDay,
+            attendeeName: result.data.attendeeName,
+            previousEntry: result.data.entryDateFormatted
           })
         } else {
           setError(result.message || 'Invalid ticket')
@@ -195,7 +226,7 @@ const QRScanner = () => {
     setError('')
 
     try {
-      const response = await fetch(`${config.API_BASE_URL}/api/tickets/confirm-entry`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/tickets/confirm-entry-multi-day`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -203,6 +234,7 @@ const QRScanner = () => {
         body: JSON.stringify({
           registrationId: verificationResult.registrationId,
           ticketNumber: verificationResult.ticketNumber,
+          eventDay: selectedDay,
           isGroupMember: verificationResult.isGroupMember || false,
           groupMemberId: verificationResult.groupMemberId || null
         })
@@ -211,7 +243,7 @@ const QRScanner = () => {
       const result = await response.json()
 
       if (result.success) {
-        setSuccessMessage('Entry confirmed! Welcome to ACD 2026!')
+        setSuccessMessage(`Entry confirmed for Day ${selectedDay}! Welcome to ACD 2026!`)
         setEntryConfirmed(true)
         // Clear data after 3 seconds for next scan
         setTimeout(() => {
@@ -307,6 +339,38 @@ const QRScanner = () => {
             >
               Logout
             </button>
+          </div>
+
+          {/* Day Selection */}
+          <div className="mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3 text-center">📅 Select Event Day</h3>
+              <div className="flex space-x-2 justify-center">
+                <button
+                  onClick={() => setSelectedDay(1)}
+                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                    selectedDay === 1
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                  }`}
+                >
+                  Day 1
+                </button>
+                <button
+                  onClick={() => setSelectedDay(2)}
+                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                    selectedDay === 2
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                  }`}
+                >
+                  Day 2
+                </button>
+              </div>
+              <p className="text-blue-700 text-sm text-center mt-2">
+                Currently scanning for <span className="font-semibold">Day {selectedDay}</span> entries
+              </p>
+            </div>
           </div>
 
           {/* Scanner */}
@@ -474,28 +538,30 @@ const QRScanner = () => {
 
           {/* Verification Result */}
           {verificationResult && !entryConfirmed && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">Ticket Details</h3>
+            <div className={`${verificationResult.hasEntered ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-4`}>
+              <h3 className={`text-lg font-semibold mb-3 ${verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}`}>
+                {verificationResult.hasEntered ? '⚠️ Duplicate Entry - Ticket Details' : 'Ticket Details'}
+              </h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-blue-600 font-medium">Name:</span>
-                  <span className="text-blue-800">{verificationResult.name}</span>
+                  <span className={`font-medium ${verificationResult.hasEntered ? 'text-orange-600' : 'text-blue-600'}`}>Name:</span>
+                  <span className={verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}>{verificationResult.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-600 font-medium">Email:</span>
-                  <span className="text-blue-800">{verificationResult.email}</span>
+                  <span className={`font-medium ${verificationResult.hasEntered ? 'text-orange-600' : 'text-blue-600'}`}>Email:</span>
+                  <span className={verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}>{verificationResult.email}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-600 font-medium">College:</span>
-                  <span className="text-blue-800">{verificationResult.college}</span>
+                  <span className={`font-medium ${verificationResult.hasEntered ? 'text-orange-600' : 'text-blue-600'}`}>College:</span>
+                  <span className={verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}>{verificationResult.college}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-600 font-medium">Year:</span>
-                  <span className="text-blue-800">{verificationResult.year}</span>
+                  <span className={`font-medium ${verificationResult.hasEntered ? 'text-orange-600' : 'text-blue-600'}`}>Year:</span>
+                  <span className={verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}>{verificationResult.year}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-600 font-medium">Ticket #:</span>
-                  <span className="text-blue-800 font-mono">{verificationResult.ticketNumber}</span>
+                  <span className={`font-medium ${verificationResult.hasEntered ? 'text-orange-600' : 'text-blue-600'}`}>Ticket #:</span>
+                  <span className={`font-mono ${verificationResult.hasEntered ? 'text-orange-800' : 'text-blue-800'}`}>{verificationResult.ticketNumber}</span>
                 </div>
                 {verificationResult.isGroupMember && (
                   <div className="flex justify-between">
@@ -510,12 +576,18 @@ const QRScanner = () => {
                   <span className="text-blue-800">₹{verificationResult.amount / 100}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-blue-600 font-medium">Valid for:</span>
+                  <span className="text-indigo-800 bg-indigo-100 px-2 py-1 rounded-full text-xs font-medium">
+                    Day {selectedDay}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-blue-600 font-medium">Status:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${verificationResult.hasEntered
                     ? 'bg-red-100 text-red-800'
                     : 'bg-green-100 text-green-800'
                     }`}>
-                    {verificationResult.hasEntered ? 'Already Entered' : 'Valid for Entry'}
+                    {verificationResult.hasEntered ? `Already Entered Day ${verificationResult.day || selectedDay}` : `Valid for Day ${selectedDay} Entry`}
                   </span>
                 </div>
               </div>
@@ -526,20 +598,35 @@ const QRScanner = () => {
                   disabled={loading}
                   className="w-full mt-4 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Confirming...' : 'Confirm Entry'}
+                  {loading ? 'Confirming...' : `Confirm Day ${selectedDay} Entry`}
                 </button>
               )}
 
               {verificationResult.hasEntered && (
-                <div className="mt-4 p-3 bg-red-50 rounded-lg">
-                  <p className="text-red-800 text-sm text-center">
-                    ⚠️ This ticket has already been used for entry
-                  </p>
-                  {verificationResult.entryTime && (
-                    <p className="text-red-600 text-xs text-center mt-1">
-                      Entered on: {new Date(verificationResult.entryTime).toLocaleString()}
+                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">⚠️</div>
+                    <p className="text-orange-900 font-semibold text-sm mb-2">
+                      Already Entered on Day {verificationResult.day || selectedDay}
                     </p>
-                  )}
+                    {verificationResult.entryTimeFormatted ? (
+                      <p className="text-orange-700 text-xs mb-2">
+                        Entry Time: {verificationResult.entryTimeFormatted}
+                      </p>
+                    ) : verificationResult.entryTime ? (
+                      <p className="text-orange-700 text-xs mb-2">
+                        Entry Time: {new Date(verificationResult.entryTime).toLocaleString()}
+                      </p>
+                    ) : null}
+                    <div className="bg-orange-100 rounded-md p-2 mt-2">
+                      <p className="text-orange-800 text-xs font-medium">
+                        ✅ This person has already been admitted to the event
+                      </p>
+                      <p className="text-orange-700 text-xs mt-1">
+                        No further action needed
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -550,7 +637,7 @@ const QRScanner = () => {
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
               <div className="text-4xl mb-3">🎉</div>
               <h3 className="text-xl font-bold text-green-800 mb-2">Welcome to ACD 2026!</h3>
-              <p className="text-green-600">Entry confirmed successfully</p>
+              <p className="text-green-600">Day {selectedDay} entry confirmed successfully</p>
             </div>
           )}
 

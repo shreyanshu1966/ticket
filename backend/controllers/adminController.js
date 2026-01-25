@@ -1,6 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
-import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendConfirmationEmail, sendBringFriendPromotionEmail } from '../services/emailService.js'
+import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendConfirmationEmail, sendGroupConfirmationEmails, sendBringFriendPromotionEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -881,15 +881,24 @@ export const resendTickets = async (req, res) => {
           }
         }
 
-        const result = await sendConfirmationEmail(registration)
+        // ✅ FIX: Handle group bookings properly like in original registration flow
+        let result
+        if (registration.isGroupBooking) {
+          console.log(`📧 Resending group confirmation emails for ${registration.ticketQuantity} tickets to ${registration.email}`)
+          result = await sendGroupConfirmationEmails(registration)
+        } else {
+          console.log(`📧 Resending individual ticket to ${registration.email}`)
+          result = await sendConfirmationEmail(registration)
+        }
+        
         if (result.success) {
           sent++
-          console.log(`✅ Ticket resent to ${registration.email}`)
+          console.log(`✅ Ticket resent to ${registration.email}${registration.isGroupBooking ? ' and all group members' : ''}`)
 
           // ✅ CRITICAL FIX: ALWAYS update ticket data, regardless of ticketGenerated status
           // This prevents ticket number mismatches and scanner failures
           registration.ticketGenerated = true
-          registration.ticketNumber = result.ticketNumber
+          registration.ticketNumber = result.ticketNumber || result.primaryTicketNumber
           registration.qrCode = result.qrCode
           registration.emailSentAt = new Date()  // Update to latest resend time
 

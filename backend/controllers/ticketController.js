@@ -1,4 +1,5 @@
 import Registration from '../models/Registration.js'
+import EventEntry from '../models/EventEntry.js'
 import { verifyQRCode } from '../services/ticketService.js'
 
 // Verify ticket by QR code data
@@ -327,6 +328,394 @@ export const confirmEntry = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Entry confirmation failed'
+    })
+  }
+}
+
+// Verify ticket for multi-day events
+export const verifyTicketMultiDay = async (req, res) => {
+  try {
+    const { qrData, eventDay } = req.body
+
+    console.log(`📥 Day ${eventDay} verify ticket request received`)
+    console.log('Request body:', JSON.stringify(req.body, null, 2))
+    console.log('QR Data:', qrData)
+    console.log('Event Day:', eventDay)
+
+    if (!qrData) {
+      console.log('❌ No qrData provided')
+      return res.status(400).json({
+        success: false,
+        message: 'QR code data is required'
+      })
+    }
+
+    if (!eventDay || ![1, 2].includes(eventDay)) {
+      console.log('❌ Invalid event day provided')
+      return res.status(400).json({
+        success: false,
+        message: 'Valid event day (1 or 2) is required'
+      })
+    }
+
+    // Verify QR code format (reuse existing logic)
+    const qrVerification = verifyQRCode(qrData)
+    console.log('QR Verification result:', qrVerification)
+
+    if (!qrVerification.valid) {
+      console.log('❌ QR verification failed:', qrVerification.error)
+      return res.status(400).json({
+        success: false,
+        message: qrVerification.error
+      })
+    }
+
+    const { ticketNumber, registrationId } = qrVerification.data
+
+    console.log('🔍 Looking up registration in database...')
+    console.log('Query:', { _id: registrationId, paymentStatus: 'completed' })
+
+    // Find registration - check both primary ticket and group member tickets
+    let registration = await Registration.findOne({
+      _id: registrationId,
+      ticketNumber: ticketNumber,
+      paymentStatus: 'completed'
+    })
+
+    let isGroupMember = false
+    let memberIndex = -1
+    let groupMember = null
+
+    // If not found in primary ticket, check group members
+    if (!registration) {
+      console.log('🔍 Not found in primary ticket, checking group members...')
+      registration = await Registration.findOne({
+        _id: registrationId,
+        paymentStatus: 'completed',
+        'groupMembers.ticketNumber': ticketNumber
+      })
+
+      if (registration) {
+        isGroupMember = true
+        memberIndex = registration.groupMembers.findIndex(member => member.ticketNumber === ticketNumber)
+        groupMember = registration.groupMembers[memberIndex]
+        console.log('✅ Found in group members, member index:', memberIndex)
+      }
+    }
+
+    console.log('Database result:', registration ? '✅ Found' : '❌ Not found')
+    if (registration) {
+      console.log('Registration details:', {
+        id: registration._id,
+        ticketNumber: isGroupMember ? `Group Member - ${ticketNumber}` : registration.ticketNumber,
+        name: isGroupMember ? registration.groupMembers[memberIndex].name : registration.name,
+        paymentStatus: registration.paymentStatus,
+        isGroupMember: isGroupMember
+      })
+    }
+
+    if (!registration) {
+      console.log('❌ Registration not found - possible reasons:')
+      console.log('  1. Ticket number mismatch')
+      console.log('  2. Registration ID not in database')
+      console.log('  3. Payment status not completed')
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid ticket or registration not found'
+      })
+    }
+
+    // Check if already entered for this specific day
+    console.log(`🔍 Checking Day ${eventDay} entry status...`)
+    const existingEntry = await EventEntry.findOne({
+      ticketNumber: ticketNumber,
+      day: eventDay
+    })
+
+    if (existingEntry) {
+      const entryDate = existingEntry.entryDate.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      })
+
+      console.log(`⚠️ DUPLICATE DAY ${eventDay} ENTRY ATTEMPT DETECTED!`)
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.log('📋 Ticket Details:')
+      console.log(`   Ticket Number: ${ticketNumber}`)
+      console.log(`   Name: ${existingEntry.attendeeName}`)
+      console.log(`   Email: ${existingEntry.attendeeEmail}`)
+      console.log(`⏰ Previous Day ${eventDay} Entry:`)
+      console.log(`   Entered At: ${entryDate}`)
+      console.log(`🚫 Action: Day ${eventDay} Entry DENIED - Already used for this day`)
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+      return res.status(400).json({
+        success: false,
+        message: `Already entered on Day ${eventDay}`,
+        error: 'DUPLICATE_DAY_ENTRY',
+        data: {
+          day: eventDay,
+          entryDate: existingEntry.entryDate,
+          entryDateFormatted: entryDate,
+          attendeeName: existingEntry.attendeeName,
+          attendeeEmail: existingEntry.attendeeEmail,
+          attendeeCollege: existingEntry.attendeeCollege,
+          attendeeYear: existingEntry.attendeeYear,
+          ticketNumber: ticketNumber,
+          isGroupMember: existingEntry.isGroupMember,
+          warningMessage: `This ticket was already used for Day ${eventDay} entry on ${entryDate}`
+        }
+      })
+    }
+
+    // Get attendee details
+    let attendeeName, attendeeDetails
+    if (groupMember) {
+      attendeeName = groupMember.name
+      attendeeDetails = {
+        name: groupMember.name,
+        college: groupMember.college,
+        year: groupMember.year,
+        email: groupMember.email,
+        ticketNumber: ticketNumber
+      }
+    } else {
+      attendeeName = registration.name
+      attendeeDetails = {
+        name: registration.name,
+        college: registration.college,
+        year: registration.year,
+        email: registration.email,
+        ticketNumber: registration.ticketNumber
+      }
+    }
+
+    console.log(`✅ Ticket is valid for Day ${eventDay} and not yet used for this day`)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log(`✅ DAY ${eventDay} TICKET VERIFIED SUCCESSFULLY`)
+    console.log('📋 Attendee Details:')
+    console.log(`   Name: ${attendeeName}`)
+    console.log(`   Email: ${attendeeDetails.email}`)
+    console.log(`   College: ${attendeeDetails.college}`)
+    console.log(`   Year: ${attendeeDetails.year}`)
+    console.log(`   Ticket Number: ${ticketNumber}`)
+    console.log(`   Group Member: ${isGroupMember ? 'Yes' : 'No'}`)
+    console.log(`   Valid for Day: ${eventDay}`)
+    console.log('🎯 Next Step: Confirm entry to grant access')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+    // Return verification result
+    res.json({
+      success: true,
+      data: {
+        registrationId: registrationId,
+        ticketNumber: ticketNumber,
+        name: attendeeDetails.name,
+        email: attendeeDetails.email,
+        college: attendeeDetails.college,
+        year: attendeeDetails.year,
+        amount: registration.amount,
+        isGroupMember: isGroupMember,
+        groupMemberId: groupMember ? groupMember._id : null,
+        canEnterDay: eventDay,
+        hasEntered: false,
+        validForDay: eventDay
+      }
+    })
+
+  } catch (error) {
+    console.error('Multi-day ticket verification error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Multi-day ticket verification failed'
+    })
+  }
+}
+
+// Confirm multi-day entry
+export const confirmEntryMultiDay = async (req, res) => {
+  try {
+    const { registrationId, ticketNumber, eventDay, isGroupMember, groupMemberId } = req.body
+
+    console.log(`🎫 Day ${eventDay} entry confirmation request received`)
+    console.log('Registration ID:', registrationId)
+    console.log('Ticket Number:', ticketNumber)
+    console.log('Event Day:', eventDay)
+    console.log('Is Group Member:', isGroupMember)
+    console.log('Group Member ID:', groupMemberId)
+
+    if (!registrationId || !ticketNumber || !eventDay) {
+      console.log('❌ Missing required fields')
+      return res.status(400).json({
+        success: false,
+        message: 'Registration ID, ticket number, and event day are required'
+      })
+    }
+
+    if (![1, 2].includes(eventDay)) {
+      console.log('❌ Invalid event day')
+      return res.status(400).json({
+        success: false,
+        message: 'Valid event day (1 or 2) is required'
+      })
+    }
+
+    // Get registration details for attendee info
+    let registration = await Registration.findOne({
+      _id: registrationId,
+      paymentStatus: 'completed'
+    })
+
+    if (!registration) {
+      console.log('❌ Registration not found for entry confirmation')
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found or invalid ticket'
+      })
+    }
+
+    let attendeeDetails, bookingEmail = registration.email
+
+    if (isGroupMember && groupMemberId) {
+      // Find group member
+      const groupMember = registration.groupMembers.find(member => 
+        member._id.toString() === groupMemberId && member.ticketNumber === ticketNumber
+      )
+      
+      if (!groupMember) {
+        console.log('❌ Group member not found')
+        return res.status(404).json({
+          success: false,
+          message: 'Group member not found'
+        })
+      }
+
+      attendeeDetails = {
+        name: groupMember.name,
+        email: groupMember.email,
+        college: groupMember.college,
+        year: groupMember.year,
+        ticketNumber: groupMember.ticketNumber
+      }
+    } else {
+      attendeeDetails = {
+        name: registration.name,
+        email: registration.email,
+        college: registration.college,
+        year: registration.year,
+        ticketNumber: registration.ticketNumber
+      }
+    }
+
+    // Create entry record
+    try {
+      const entryRecord = new EventEntry({
+        registrationId: registrationId,
+        ticketNumber: ticketNumber,
+        attendeeName: attendeeDetails.name,
+        attendeeEmail: attendeeDetails.email,
+        attendeeCollege: attendeeDetails.college,
+        attendeeYear: attendeeDetails.year,
+        day: eventDay,
+        entryDate: new Date(),
+        isGroupMember: isGroupMember || false,
+        groupMemberId: groupMemberId || null,
+        bookingEmail: bookingEmail
+      })
+
+      await entryRecord.save()
+
+      const entryTime = entryRecord.entryDate.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      })
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.log(`🎉 DAY ${eventDay} ENTRY CONFIRMED SUCCESSFULLY`)
+      console.log('📋 Attendee Information:')
+      console.log(`   Ticket Number: ${ticketNumber}`)
+      console.log(`   Name: ${attendeeDetails.name}`)
+      console.log(`   Email: ${attendeeDetails.email}`)
+      console.log(`   College: ${attendeeDetails.college}`)
+      console.log(`   Year: ${attendeeDetails.year}`)
+      console.log(`⏰ Day ${eventDay} Entry Details:`)
+      console.log(`   Confirmed At: ${entryTime}`)
+      console.log(`   Entry Status: GRANTED FOR DAY ${eventDay}`)
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+      res.json({
+        success: true,
+        message: `Entry confirmed for Day ${eventDay}!`,
+        data: {
+          day: eventDay,
+          entryId: entryRecord._id,
+          registrationId: entryRecord.registrationId,
+          ticketNumber: entryRecord.ticketNumber,
+          attendeeName: entryRecord.attendeeName,
+          attendeeEmail: entryRecord.attendeeEmail,
+          entryDate: entryRecord.entryDate,
+          entryDateFormatted: entryTime,
+          isGroupMember: entryRecord.isGroupMember
+        }
+      })
+
+    } catch (saveError) {
+      // Handle duplicate entry error
+      if (saveError.code === 11000) {
+        console.log(`⚠️ Duplicate Day ${eventDay} entry attempt blocked by database constraint`)
+        return res.status(400).json({
+          success: false,
+          message: `Already entered on Day ${eventDay}`,
+          error: 'DUPLICATE_DAY_ENTRY'
+        })
+      }
+      throw saveError
+    }
+
+  } catch (error) {
+    console.error('Multi-day entry confirmation error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Multi-day entry confirmation failed'
+    })
+  }
+}
+
+// Get multi-day attendance statistics
+export const getMultiDayStats = async (req, res) => {
+  try {
+    // Get daily stats
+    const dailyStats = await EventEntry.getDailyStats()
+    
+    // Get both days attendees
+    const bothDaysAttendees = await EventEntry.getBothDaysAttendees()
+    
+    // Get total unique attendees
+    const totalUniqueAttendees = await EventEntry.distinct('ticketNumber')
+    
+    // Get day-wise breakdown
+    const day1Count = dailyStats.find(stat => stat.day === 1)?.totalEntries || 0
+    const day2Count = dailyStats.find(stat => stat.day === 2)?.totalEntries || 0
+    
+    res.json({
+      success: true,
+      data: {
+        day1Entries: day1Count,
+        day2Entries: day2Count,
+        totalUniqueAttendees: totalUniqueAttendees.length,
+        bothDaysAttendees: bothDaysAttendees.length,
+        dailyBreakdown: dailyStats,
+        bothDaysAttendeesDetails: bothDaysAttendees
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching multi-day stats:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch multi-day statistics'
     })
   }
 }
