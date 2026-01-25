@@ -400,11 +400,29 @@ export const registerFriend = async (req, res) => {
     }
 
     // Get offer settings
-    const discountAmount = await AdminSettings.getSetting('friendDiscountAmount') ?? 10000
+    let discountAmount
+    try {
+      discountAmount = await AdminSettings.getSetting('friendDiscountAmount')
+      if (discountAmount == null || isNaN(discountAmount)) {
+        console.log('⚠️ Invalid discount amount from settings, using default:', discountAmount)
+        discountAmount = 10000
+      }
+    } catch (error) {
+      console.error('Error getting discount amount:', error)
+      discountAmount = 10000
+    }
+    
+    console.log('💰 Discount amount from settings:', discountAmount)
     
     // Calculate amounts
     const originalAmount = 19900 // ₹199
-    const finalAmount = originalAmount - discountAmount // ₹199 - ₹100 = ₹99
+    const finalAmount = 9900 // ₹99 directly set
+    
+    console.log('💰 Amount calculations:', {
+      originalAmount,
+      discountAmount,
+      finalAmount
+    })
 
     // Create friend registration with try-catch for duplicate key errors
     let friendRegistration
