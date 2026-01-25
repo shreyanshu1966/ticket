@@ -20,8 +20,11 @@ const PORT = process.env.PORT || 5000
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
   'https://acd.acesmitadt.com',
-  'https://api.acesmitadt.com'
+  'https://api.acesmitadt.com',
+  'https://www.acd.acesmitadt.com'
 ]
 
 // Add custom origins from environment variable
@@ -30,30 +33,65 @@ if (process.env.CORS_ORIGIN) {
   allowedOrigins.push(...customOrigins)
 }
 
+console.log('🔐 CORS allowed origins:', allowedOrigins)
+
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log(`🌍 CORS request from origin: ${origin || 'no origin'}`)
+    
     // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true)
 
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS allowed: ${origin}`)
       callback(null, true)
     } else {
-      console.log(`⚠️ CORS blocked origin: ${origin}`)
-      callback(new Error('Not allowed by CORS'))
+      console.log(`❌ CORS blocked origin: ${origin}`)
+      console.log(`Available origins:`, allowedOrigins)
+      callback(new Error(`Not allowed by CORS: ${origin}`))
     }
   },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   maxAge: 86400 // 24 hours
 }
 
 app.use(cors(corsOptions))
 
-// Handle preflight requests explicitly
+// Handle preflight requests explicitly for all routes
 app.options('*', cors(corsOptions))
+
+// Additional CORS headers as fallback
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin)
+  }
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS,HEAD')
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+  res.header('Access-Control-Max-Age', '86400')
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    console.log(`🔄 Preflight request for ${req.path} from ${origin}`)
+    res.sendStatus(200)
+    return
+  }
+  
+  next()
+})
 
 // Body parser middleware with size limits
 app.use(express.json({ limit: '10mb' }))

@@ -450,7 +450,9 @@ export const registerFriend = async (req, res) => {
         originalDisplay: `₹${originalAmount / 100}`
       }
     })
-❌ Error registering friend:', error)
+
+  } catch (error) {
+    console.error('❌ Error registering friend:', error)
     console.error('Error details:', {
       name: error.name,
       message: error.message,
@@ -476,9 +478,7 @@ export const registerFriend = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      message: 'Server error while registering friend. Please try again.
-      success: false,
-      message: 'Server error while registering friend'
+      message: 'Server error while registering friend. Please try again.'
     })
   }
 }
