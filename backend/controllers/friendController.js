@@ -427,7 +427,7 @@ export const registerFriend = async (req, res) => {
     // Create friend registration with try-catch for duplicate key errors
     let friendRegistration
     try {
-      friendRegistration = new Registration({
+      const registrationData = {
         name: friend.name.trim(),
         email: friend.email.toLowerCase().trim(),
         phone: friend.phone.replace(/\D/g, ''),
@@ -440,6 +440,16 @@ export const registerFriend = async (req, res) => {
         isFriendReferral: true,
         referredBy: referrer._id,
         paymentStatus: 'pending'
+      }
+
+      console.log('📝 Registration data being created:', registrationData)
+      
+      friendRegistration = new Registration(registrationData)
+
+      console.log('📝 Registration object before save:', {
+        amount: friendRegistration.amount,
+        totalAmount: friendRegistration.totalAmount,
+        originalAmount: friendRegistration.originalAmount
       })
 
       await friendRegistration.save()
