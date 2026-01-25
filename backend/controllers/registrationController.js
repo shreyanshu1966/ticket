@@ -438,6 +438,21 @@ export const verifyPayment = async (req, res) => {
       registration.paymentNotes = notes || ''
       registration.paymentDate = new Date()
 
+      // If this is a friend referral, update the referrer's status
+      if (registration.isFriendReferral && registration.referredBy) {
+        try {
+          const referrer = await Registration.findById(registration.referredBy)
+          if (referrer && !referrer.hasReferredFriend) {
+            referrer.hasReferredFriend = true
+            await referrer.save()
+            console.log(`✅ Updated referrer ${referrer.email} - hasReferredFriend set to true`)
+          }
+        } catch (referrerError) {
+          console.error('Error updating referrer status:', referrerError)
+          // Don't fail the payment verification for this
+        }
+      }
+
       await registration.save()
 
       // 🚀 Send ticket email in background (non-blocking)

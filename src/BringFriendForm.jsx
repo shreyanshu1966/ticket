@@ -87,6 +87,9 @@ const BringFriendForm = () => {
   }
 
   const sendOTP = async () => {
+    setLoading(true)
+    setError('')
+    
     try {
       const response = await fetch(`${config.API_BASE_URL}/api/friend/verify-existing-user`, {
         method: 'POST',
@@ -104,6 +107,8 @@ const BringFriendForm = () => {
       }
     } catch (error) {
       setError('Failed to send OTP. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -151,13 +156,17 @@ const BringFriendForm = () => {
       return
     }
 
-    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+    // Enhanced validation
+    const trimmedEmail = email.trim().toLowerCase()
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(trimmedEmail)) {
       setError('Please enter valid email address')
       return
     }
 
-    if (phone.length < 10) {
-      setError('Please enter valid phone number')
+    // Enhanced phone number validation
+    const cleanPhone = phone.replace(/\D/g, '')
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      setError('Please enter valid phone number (10-15 digits)')
       return
     }
 
@@ -194,6 +203,10 @@ const BringFriendForm = () => {
       ...prev,
       [field]: value
     }))
+    // Clear error when user starts typing
+    if (error) {
+      setError('')
+    }
   }
 
   if (!offerStatus) {
@@ -306,7 +319,10 @@ const BringFriendForm = () => {
                   id="identifier"
                   placeholder="your.email@example.com or #TICKET123"
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value)
+                    setError('') // Clear error when user types
+                  }}
                   className="w-full px-3 py-2 bg-[#262626] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
                   disabled={loading}
                 />
@@ -350,7 +366,11 @@ const BringFriendForm = () => {
                   id="otp"
                   placeholder="000000"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setOtp(value)
+                    setError('') // Clear error when user types
+                  }}
                   className="w-full px-3 py-2 bg-[#262626] border border-gray-600 rounded-lg text-white text-center text-2xl tracking-widest font-mono focus:outline-none focus:border-purple-500 transition-colors"
                   disabled={loading}
                   maxLength={6}
@@ -364,9 +384,14 @@ const BringFriendForm = () => {
                     <button
                       type="button"
                       onClick={sendOTP}
-                      className="text-xs text-purple-400 hover:text-purple-300 underline"
+                      disabled={loading}
+                      className={`text-xs underline transition-colors ${
+                        loading 
+                          ? 'text-gray-500 cursor-not-allowed' 
+                          : 'text-purple-400 hover:text-purple-300'
+                      }`}
                     >
-                      Resend OTP
+                      {loading ? 'Sending...' : 'Resend OTP'}
                     </button>
                   )}
                 </div>
@@ -392,7 +417,13 @@ const BringFriendForm = () => {
               </button>
 
               <button
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  setStep(1)
+                  setOtp('')
+                  setError('')
+                  setEligibleUser(null)
+                  setResendTimer(0)
+                }}
                 className="w-full mt-3 bg-[#262626] hover:bg-[#333333] text-gray-300 py-2 rounded-full font-medium transition-colors"
               >
                 Back

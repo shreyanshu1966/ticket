@@ -34,7 +34,7 @@ router.post('/register', [
   body('referrerEmail').isEmail().withMessage('Valid referrer email is required'),
   body('friend.name').notEmpty().withMessage('Friend name is required'),
   body('friend.email').isEmail().withMessage('Valid friend email is required'),
-  body('friend.phone').isMobilePhone().withMessage('Valid phone number is required'),
+  body('friend.phone').notEmpty().withMessage('Phone number is required'),
   body('friend.college').notEmpty().withMessage('College is required'),
   body('friend.year').notEmpty().withMessage('Year is required')
 ], registerFriend)

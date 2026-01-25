@@ -306,8 +306,15 @@ export const verifyOTP = async (req, res) => {
 // Register friend with discount
 export const registerFriend = async (req, res) => {
   try {
+    console.log('📝 Friend registration request:', {
+      referrerEmail,
+      friendName: friend?.name,
+      friendEmail: friend?.email
+    })
+
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
+      console.error('❌ Validation errors:', errors.array())
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -316,6 +323,14 @@ export const registerFriend = async (req, res) => {
     }
 
     const { referrerEmail, friend } = req.body
+
+    // Validate friend object structure
+    if (!friend || typeof friend !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'Friend details are required'
+      })
+    }
 
     // Security Check: Ensure OTP was verified recently (e.g., within 15 mins)
     // This prevents bypassing the OTP step by calling this endpoint directly
@@ -349,16 +364,21 @@ export const registerFriend = async (req, res) => {
       })
     }
 
-    // Check if friend already has completed registration
+    // Check if friend already has any registration (any status)
     const existingFriend = await Registration.findOne({
-      email: friend.email.toLowerCase(),
-      paymentStatus: 'completed'
+      email: friend.email.toLowerCase().trim()
     })
 
     if (existingFriend) {
+      let message = 'This person is already registered for this event'
+      if (existingFriend.paymentStatus === 'pending') {
+        message = 'This person already has a pending registration. Please complete that payment first.'
+      } else if (existingFriend.paymentStatus === 'completed') {
+        message = 'This person is already registered with completed payment'
+      }
       return res.status(400).json({
         success: false,
-        message: 'This person is already registered with completed payment'
+        message: message
       })
     }
 
@@ -369,26 +389,39 @@ export const registerFriend = async (req, res) => {
     const originalAmount = 19900 // ₹199
     const finalAmount = originalAmount - discountAmount // ₹199 - ₹100 = ₹99
 
-    // Create friend registration
-    const friendRegistration = new Registration({
-      name: friend.name,
-      email: friend.email.toLowerCase(),
-      phone: friend.phone,
-      college: friend.college,
-      year: friend.year,
-      amount: finalAmount,
-      totalAmount: finalAmount,
-      originalAmount: originalAmount,
-      friendDiscountApplied: discountAmount,
-      isFriendReferral: true,
-      referredBy: referrer._id,
-      paymentStatus: 'pending'
-    })
+    // Create friend registration with try-catch for duplicate key errors
+    let friendRegistration
+    try {
+      friendRegistration = new Registration({
+        name: friend.name.trim(),
+        email: friend.email.toLowerCase().trim(),
+        phone: friend.phone.replace(/\D/g, ''),
+        college: friend.college.trim(),
+        year: friend.year,
+        amount: finalAmount,
+        totalAmount: finalAmount,
+        originalAmount: originalAmount,
+        friendDiscountApplied: discountAmount,
+        isFriendReferral: true,
+        referredBy: referrer._id,
+        paymentStatus: 'pending'
+      })
 
-    await friendRegistration.save()
+      await friendRegistration.save()
+      console.log('✅ Friend registration created successfully:', friendRegistration._id)
+    } catch (saveError) {
+      console.error('❌ Error saving friend registration:', saveError)
+      if (saveError.code === 11000) {
+        // Handle duplicate email error specifically
+        return res.status(400).json({
+          success: false,
+          message: 'This email is already registered. Please use a different email address.'
+        })
+      }
+      throw saveError // Re-throw if it's not a duplicate key error
+    }
 
-    // Update referrer
-    referrer.hasReferredFriend = true
+    // Add friend to referrer's list (but don't mark as referred until payment is verified)
     referrer.friendsReferred.push(friendRegistration._id)
     await referrer.save()
 
@@ -417,10 +450,33 @@ export const registerFriend = async (req, res) => {
         originalDisplay: `₹${originalAmount / 100}`
       }
     })
-
-  } catch (error) {
-    console.error('Error registering friend:', error)
+❌ Error registering friend:', error)
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    })
+    
+    // More specific error handling
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid friend data provided',
+        details: Object.keys(error.errors).map(key => error.errors[key].message)
+      })
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid referrer information'
+      })
+    }
+    
     res.status(500).json({
+      success: false,
+      message: 'Server error while registering friend. Please try again.
       success: false,
       message: 'Server error while registering friend'
     })
