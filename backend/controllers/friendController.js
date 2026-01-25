@@ -306,12 +306,6 @@ export const verifyOTP = async (req, res) => {
 // Register friend with discount
 export const registerFriend = async (req, res) => {
   try {
-    console.log('📝 Friend registration request:', {
-      referrerEmail,
-      friendName: friend?.name,
-      friendEmail: friend?.email
-    })
-
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       console.error('❌ Validation errors:', errors.array())
@@ -323,6 +317,12 @@ export const registerFriend = async (req, res) => {
     }
 
     const { referrerEmail, friend } = req.body
+
+    console.log('📝 Friend registration request:', {
+      referrerEmail,
+      friendName: friend?.name,
+      friendEmail: friend?.email
+    })
 
     // Validate friend object structure
     if (!friend || typeof friend !== 'object') {
