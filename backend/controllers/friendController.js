@@ -216,7 +216,7 @@ export const verifyExistingUser = async (req, res) => {
         console.error('❌ Email sending failed:', emailResult.error)
         return res.status(500).json({
           success: false,
-          message: 'Failed to send OTP email: ' + emailResult.error
+          message: 'Unable to send OTP email at this time. Please try again later.'
         })
       }
       
@@ -225,7 +225,7 @@ export const verifyExistingUser = async (req, res) => {
       console.error('❌ Error sending OTP email:', emailError)
       return res.status(500).json({
         success: false,
-        message: 'Failed to send OTP email: ' + emailError.message
+        message: 'Unable to send OTP email at this time. Please try again later.'
       })
     }
 

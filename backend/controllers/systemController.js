@@ -1,4 +1,5 @@
 import { sendTestEmail } from '../services/emailService.js'
+import { getEmailQueueStatus, clearEmailQueue } from '../services/queuedEmailService.js'
 import { validationResult } from 'express-validator'
 
 // Health check with enhanced connectivity tests
@@ -51,15 +52,52 @@ export const testEmail = async (req, res) => {
     } else {
       res.status(500).json({
         success: false,
-        message: 'Failed to send test email',
-        error: result.error
+        message: result.error // This now contains user-friendly message from service
       })
     }
   } catch (error) {
     console.error('Test email failed:', error)
     res.status(500).json({
       success: false,
-      message: 'Failed to send test email',
+      message: 'Unable to send test email at this time'
+    })
+  }
+}
+
+// Email queue status endpoint
+export const emailQueueStatus = async (req, res) => {
+  try {
+    const queueStatus = getEmailQueueStatus()
+    res.json({
+      success: true,
+      queue: queueStatus,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Email queue status error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get email queue status',
+      error: error.message
+    })
+  }
+}
+
+// Clear email queue endpoint (admin only)
+export const clearQueue = async (req, res) => {
+  try {
+    const clearedCount = clearEmailQueue()
+    res.json({
+      success: true,
+      message: `Cleared ${clearedCount} emails from queue`,
+      clearedCount,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Clear email queue error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear email queue',
       error: error.message
     })
   }

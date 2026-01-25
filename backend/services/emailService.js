@@ -1,5 +1,6 @@
 import transporter, { noreplyTransporter, otpTransporter } from '../config/nodemailer.js'
 import { generateTicketNumber, generateQRCodeBuffer, generateTicketHTML } from './ticketService.js'
+import { sendOtpEmailQueued, sendMainEmailQueued, sendNoreplyEmailQueued, getEmailQueueStatus } from './queuedEmailService.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -528,34 +529,17 @@ This is an automated email. For support, contact mail@acesmitadt.com
   }
 }
 
-// Helper function to send email with retry logic
+// Helper function to send email with retry logic - now uses queue
 const sendEmailWithRetry = async (mailOptions, maxRetries = 3) => {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`📧 Sending email (attempt ${attempt}/${maxRetries})...`);
-      const info = await transporter.sendMail(mailOptions);
-      return info;
-    } catch (error) {
-      lastError = error;
-      console.error(`❌ Email attempt ${attempt} failed:`, error.message);
-
-      // Don't retry on certain errors
-      if (error.code === 'EAUTH' || error.responseCode === 535) {
-        throw error; // Authentication errors won't be fixed by retrying
-      }
-
-      // Wait before retrying (exponential backoff)
-      if (attempt < maxRetries) {
-        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5 seconds
-        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
+  try {
+    console.log(`📧 Adding email to queue for delivery...`);
+    const info = await sendMainEmailQueued(mailOptions);
+    console.log('✅ Email queued and sent successfully');
+    return info;
+  } catch (error) {
+    console.error(`❌ Queued email failed:`, error.message);
+    throw error; // Queue handles retries internally
   }
-
-  throw lastError;
 };
 
 // Function to send confirmation emails
@@ -687,7 +671,7 @@ export const sendGroupConfirmationEmails = async (registrationData) => {
 
   } catch (error) {
     console.error('❌ Group email sending failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send confirmation emails at this time. Please contact support.' }
   }
 }
 
@@ -751,7 +735,7 @@ export const sendConfirmationEmail = async (registrationData) => {
     }
   } catch (error) {
     console.error('❌ Email sending failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send confirmation email at this time. Please contact support.' }
   }
 }
 
@@ -778,11 +762,11 @@ If you received this email, the email configuration is working correctly!
 Timestamp: ${new Date().toLocaleString('en-IN')}`
     }
 
-    const info = await transporter.sendMail(mailOptions)
+    const info = await sendMainEmailQueued(mailOptions)
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('Test email failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send test email. Please check your email configuration.' }
   }
 }
 
@@ -846,7 +830,7 @@ export const sendBulkNotification = async (recipients, subject, message) => {
             text: `${subject}\n\n${personalizedMessage}\n\nBest regards,\nACD 2026 Team`
           }
 
-          const info = await noreplyTransporter.sendMail(mailOptions)
+          const info = await sendNoreplyEmailQueued(mailOptions)
           console.log(`✅ Bulk email sent to ${recipient.email}:`, info.messageId)
           results.sent++
 
@@ -898,28 +882,11 @@ export const sendPendingPaymentEmail = async (registrationData) => {
     console.log('📧 Sending pending payment reminder email...')
     const pendingEmail = generatePendingPaymentEmail(registrationData)
 
-    // Helper function to send with noreply transporter
-    const sendWithNoreply = async (mailOptions, maxRetries = 3) => {
-      let lastError;
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`📧 Sending pending payment email (attempt ${attempt}/${maxRetries})...`);
-          const info = await noreplyTransporter.sendMail(mailOptions);
-          return info;
-        } catch (error) {
-          lastError = error;
-          console.error(`❌ Pending payment email attempt ${attempt} failed:`, error.message);
-          if (error.code === 'EAUTH' || error.responseCode === 535) {
-            throw error;
-          }
-          if (attempt < maxRetries) {
-            const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-            console.log(`⏳ Waiting ${waitTime}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-        }
-      }
-      throw lastError;
+    // Helper function to send with noreply transporter - now uses queue
+    const sendWithNoreply = async (mailOptions) => {
+      console.log(`📧 Adding pending payment email to queue...`);
+      const info = await sendNoreplyEmailQueued(mailOptions);
+      return info;
     };
 
     const info = await sendWithNoreply({
@@ -938,7 +905,7 @@ export const sendPendingPaymentEmail = async (registrationData) => {
     }
   } catch (error) {
     console.error('❌ Pending payment email failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send payment reminder email at this time.' }
   }
 }
 
@@ -1138,7 +1105,7 @@ This is an automated email. For support, contact mail@acesmitadt.com
       `
     }
 
-    const info = await noreplyTransporter.sendMail(mailOptions)
+    const info = await sendNoreplyEmailQueued(mailOptions)
     console.log('✅ Timing correction email sent:', info.messageId)
 
     return {
@@ -1147,7 +1114,7 @@ This is an automated email. For support, contact mail@acesmitadt.com
     }
   } catch (error) {
     console.error('❌ Timing correction email failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send notification email at this time.' }
   }
 }
 
@@ -1247,8 +1214,8 @@ ACD 2026 Team
       `
     }
 
-    console.log('📤 Sending OTP email via otpTransporter...')
-    const info = await otpTransporter.sendMail(mailOptions)
+    console.log('📤 Adding OTP email to queue...')
+    const info = await sendOtpEmailQueued(mailOptions)
     console.log('✅ OTP email sent successfully! Message ID:', info.messageId)
     return { success: true, messageId: info.messageId }
   } catch (error) {
@@ -1259,7 +1226,7 @@ ACD 2026 Team
       code: error.code,
       response: error.response
     })
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send OTP email at this time. Please try again later.' }
   }
 }
 
@@ -1402,7 +1369,7 @@ For support, contact us at mail@acesmitadt.com
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('❌ Friend registration confirmation email failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send confirmation email at this time.' }
   }
 }
 
@@ -1702,11 +1669,11 @@ export const sendBringFriendPromotionEmail = async (registrationData) => {
       text: emailTemplate.text
     }
 
-    const info = await otpTransporter.sendMail(mailOptions)
+    const info = await sendOtpEmailQueued(mailOptions)
     console.log(`✅ Bring friend promotion email sent to ${name} (${email})`)
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('❌ Bring friend promotion email failed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: 'Unable to send promotional email at this time.' }
   }
 }
