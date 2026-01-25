@@ -161,12 +161,21 @@ export const verifyExistingUser = async (req, res) => {
       })
     }
 
-    // Check rate limiting - max 3 OTP requests per hour
+    // Clear any existing blocked OTPs (max attempts reached) before creating new one
+    await OTP.deleteMany({
+      email: existingUser.email,
+      purpose: 'friend_invitation',
+      attempts: { $gte: 3 },
+      isUsed: false
+    })
+
+    // Check rate limiting - max 3 OTP requests per hour (excluding blocked ones)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const recentOTPs = await OTP.countDocuments({
       email: existingUser.email,
       purpose: 'friend_invitation',
-      createdAt: { $gte: oneHourAgo }
+      createdAt: { $gte: oneHourAgo },
+      attempts: { $lt: 3 } // Only count non-blocked OTPs
     })
 
     if (recentOTPs >= 3) {
@@ -182,6 +191,13 @@ export const verifyExistingUser = async (req, res) => {
     console.log('📧 Generating OTP for friend referral...')
     console.log(`User: ${existingUser.name} (${existingUser.email})`)
     console.log(`OTP: ${otp}`)
+    
+    // Clear any existing unused OTPs for this user before creating a new one
+    await OTP.deleteMany({
+      email: existingUser.email,
+      purpose: 'friend_invitation',
+      isUsed: false
+    })
     
     await OTP.create({
       email: existingUser.email,
@@ -264,7 +280,8 @@ export const verifyOTP = async (req, res) => {
     if (otpRecord.attempts >= otpRecord.maxAttempts) {
       return res.status(400).json({
         success: false,
-        message: 'Maximum OTP verification attempts reached'
+        message: 'Maximum OTP verification attempts reached. Please request a new OTP.',
+        code: 'MAX_ATTEMPTS_REACHED'
       })
     }
 
