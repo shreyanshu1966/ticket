@@ -738,10 +738,9 @@ export const sendNewTimingUpdate = async (req, res) => {
     if (targetGroup === 'completed') filter.paymentStatus = 'completed'
     if (targetGroup === 'pending') filter.paymentStatus = 'pending'
     if (targetGroup === 'all') {
-      // Send to everyone who has registered
+      // Send to completed and paid_awaiting_verification only
       filter.$or = [
         { paymentStatus: 'completed' },
-        { paymentStatus: 'pending' },
         { paymentStatus: 'paid_awaiting_verification' }
       ]
     }
