@@ -139,6 +139,44 @@ const AdminNotifications = () => {
     }
   }
 
+  const handleSendNewTimingUpdate = async (targetGroup = 'all') => {
+    if (!confirm(`Are you sure you want to send new timing update emails to ${targetGroup === 'all' ? 'ALL registered users' : targetGroup + ' users'}? This will notify them about the new Day 1 timing (10 AM - 6 PM).`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(buildApiUrl('/api/admin/notifications/new-timing-update'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ targetGroup })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken')
+        navigate('/admin/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`✅ ${data.message} - New timing update emails sent successfully!`)
+        if (data.data.failed > 0) {
+          setError(`Note: ${data.data.failed} emails failed to send. Check server logs for details.`)
+        }
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error sending new timing update emails')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleResendTickets = async (targetGroup = 'completed') => {
     if (!confirm(`Are you sure you want to resend tickets to ${targetGroup === 'completed' ? 'ALL users with completed payments' : targetGroup + ' users'}? This will send registration confirmation and ticket emails.`)) {
       return
@@ -323,6 +361,81 @@ const AdminNotifications = () => {
 
               <p className="text-xs text-yellow-700 mt-3 italic">
                 💡 Tip: Test with a small group first before sending to all users
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Timing Update Section - Day 1: 10 AM - 6 PM */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-bold text-green-900 mb-2">
+                ⏰ New Event Timing Update
+              </h3>
+              <p className="text-sm text-green-800 mb-4">
+                Send notification emails about the <strong>new timing for Day 1</strong>.
+                The event timing has been updated to <strong>10:00 AM - 6:00 PM for Day 1 (January 28, 2026)</strong>.
+              </p>
+
+              <div className="bg-white bg-opacity-60 rounded-md p-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Email will include:</h4>
+                <ul className="text-xs text-gray-700 space-y-1">
+                  <li>✓ Clear announcement of the new Day 1 timing (10:00 AM - 6:00 PM)</li>
+                  <li>✓ Complete event schedule for both days</li>
+                  <li>✓ Important notes about planning travel accordingly</li>
+                  <li>✓ Professional update message and contact information</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleSendNewTimingUpdate('all')}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-2.5 rounded-md font-medium transition-colors shadow-md flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Send to All Users
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleSendNewTimingUpdate('completed')}
+                  disabled={loading}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Completed Only
+                </button>
+
+                <button
+                  onClick={() => handleSendNewTimingUpdate('pending')}
+                  disabled={loading}
+                  className="bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Pending Only
+                </button>
+              </div>
+
+              <p className="text-xs text-green-700 mt-3 italic">
+                ✨ New timing: Day 1 now runs from 10 AM to 6 PM for better experience
               </p>
             </div>
           </div>
