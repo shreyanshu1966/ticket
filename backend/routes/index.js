@@ -10,8 +10,45 @@ const router = express.Router()
 // System routes (health, test-email)
 router.use('/api', systemRoutes)
 
-// Registration routes
-router.use('/api/registrations', registrationRoutes)
+// Registration routes - COMMENTED OUT - REGISTRATIONS CLOSED
+// router.use('/api/registrations', registrationRoutes)
+
+// Return "registrations closed" message for all registration endpoints
+router.use('/api/registrations/*', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Registrations are currently closed',
+    error: 'REGISTRATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
+
+router.post('/api/create-order', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Registrations are currently closed',
+    error: 'REGISTRATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
+
+router.post('/api/verify-payment', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Registrations are currently closed',
+    error: 'REGISTRATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
+
+router.post('/api/check-verification', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Registrations are currently closed',
+    error: 'REGISTRATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
 
 // Ticket routes
 router.use('/api/tickets', ticketRoutes)
@@ -19,23 +56,33 @@ router.use('/api/tickets', ticketRoutes)
 // Admin routes
 router.use('/api/admin', adminRoutes)
 
-// Friend referral routes
-router.use('/api/friend', friendRoutes)
+// Friend referral routes - COMMENTED OUT - REGISTRATIONS CLOSED
+// router.use('/api/friend', friendRoutes)
 
-// Legacy endpoints for backward compatibility (only specific endpoints to avoid duplication)
-router.post('/api/create-order', (req, res, next) => {
-  req.url = '/create-order'
-  registrationRoutes(req, res, next)
+// Return "registrations closed" message for friend referral endpoints
+router.use('/api/friend/*', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Registrations are currently closed',
+    error: 'REGISTRATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
 })
 
-router.post('/api/verify-payment', (req, res, next) => {
-  req.url = '/verify-payment'
-  registrationRoutes(req, res, next)
-})
+// Legacy endpoints for backward compatibility - COMMENTED OUT - REGISTRATIONS CLOSED
+// router.post('/api/create-order', (req, res, next) => {
+//   req.url = '/create-order'
+//   registrationRoutes(req, res, next)
+// })
 
-router.post('/api/check-verification', (req, res, next) => {
-  req.url = '/check-verification'
-  registrationRoutes(req, res, next)
-})
+// router.post('/api/verify-payment', (req, res, next) => {
+//   req.url = '/verify-payment'
+//   registrationRoutes(req, res, next)
+// })
+
+// router.post('/api/check-verification', (req, res, next) => {
+//   req.url = '/check-verification'
+//   registrationRoutes(req, res, next)
+// })
 
 export default router

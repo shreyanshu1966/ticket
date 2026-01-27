@@ -4,6 +4,9 @@ import PaymentForm from './PaymentForm.jsx'
 import PaymentSuccess from './PaymentSuccess.jsx'
 
 function EventForm() {
+  // Registration status - set to true to close registrations
+  const isRegistrationClosed = true
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -224,6 +227,48 @@ function EventForm() {
       formData.year.trim()
 
     return basicFormValid && Object.keys(validationErrors).length === 0
+  }
+
+  // Show registration closed message if registrations are closed
+  if (isRegistrationClosed) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-black px-4">
+        <div className="w-full max-w-lg bg-[#1a1a1a] rounded-2xl p-8 border border-gray-700">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Registrations Closed
+            </h2>
+            <p className="text-gray-400 mb-6 text-sm">
+              Thank you for your interest! Registration for this event has been closed.
+            </p>
+            <div className="bg-[#262626] border border-gray-600 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-purple-400 mb-3 text-center">
+                📞 For Any Queries, Contact:
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Aayush:</span>
+                  <a href="tel:+919226750350" className="text-white hover:text-purple-400 transition-colors">
+                    9226750350
+                  </a>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Ishan:</span>
+                  <a href="tel:+919552448038" className="text-white hover:text-purple-400 transition-colors">
+                    9552448038
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (showPayment) {
