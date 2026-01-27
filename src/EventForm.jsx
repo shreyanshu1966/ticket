@@ -5,7 +5,7 @@ import PaymentSuccess from './PaymentSuccess.jsx'
 
 function EventForm() {
   // Registration status - set to true to close registrations
-  const isRegistrationClosed = true
+  const isRegistrationClosed = false
 
   const [formData, setFormData] = useState({
     name: '',

@@ -10,27 +10,8 @@ const router = express.Router()
 // System routes (health, test-email)
 router.use('/api', systemRoutes)
 
-// Registration routes - COMMENTED OUT - REGISTRATIONS CLOSED
-// router.use('/api/registrations', registrationRoutes)
-
-// Return "registrations closed" message for all registration endpoints
-router.use('/api/registrations/*', (req, res) => {
-  res.status(403).json({
-    success: false,
-    message: 'Registrations are currently closed',
-    error: 'REGISTRATIONS_CLOSED',
-    timestamp: new Date().toISOString()
-  })
-})
-
-router.post('/api/create-order', (req, res) => {
-  res.status(403).json({
-    success: false,
-    message: 'Registrations are currently closed',
-    error: 'REGISTRATIONS_CLOSED',
-    timestamp: new Date().toISOString()
-  })
-})
+// Registration routes - ENABLED
+router.use('/api/registrations', registrationRoutes)
 
 router.post('/api/verify-payment', (req, res) => {
   res.status(403).json({
