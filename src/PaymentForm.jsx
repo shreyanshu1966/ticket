@@ -144,18 +144,8 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
             <div className="bg-[#262626] rounded-lg p-4 border border-gray-600">
               <h3 className="font-semibold text-purple-400 mb-2">Booking Details</h3>
               <div className="text-sm space-y-2">
-                {registrationData.isGroupBooking && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Booking Type:</span>
-                    <span className="text-green-400 font-semibold">Group Booking</span>
-                  </div>
-                )}
-                {registrationData.ticketQuantity && registrationData.ticketQuantity > 1 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Number of Tickets:</span>
-                    <span className="text-white font-bold">{registrationData.ticketQuantity}</span>
-                  </div>
-                )}
+
+
                 <div className="flex justify-between">
                   <span className="text-gray-400">Amount:</span>
                   <span className="text-white font-bold">₹{PAYMENT_AMOUNT}</span>
@@ -189,14 +179,7 @@ function PaymentForm({ registrationData, onPaymentComplete }) {
                   <span className="text-gray-400">Primary Name:</span>
                   <span className="text-white">{registrationData.name}</span>
                 </div>
-                {registrationData.isGroupBooking && registrationData.ticketQuantity >= 4 && (
-                  <div className="bg-green-900/30 border border-green-600/50 rounded p-2 mt-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-green-400">🎉 Buy 3 Get 1 Free Applied!</span>
-                      <span className="text-green-400 font-bold">Saved: ₹{Math.floor(registrationData.ticketQuantity / 4) * 199}</span>
-                    </div>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>

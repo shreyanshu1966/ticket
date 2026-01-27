@@ -11,13 +11,10 @@ function PaymentSuccess({ registrationData, onStartOver }) {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            {registrationData?.isGroupBooking ? 'Group Payment Submitted!' : 'Payment Submitted!'}
+            Payment Submitted!
           </h2>
           <p className="text-gray-400 mb-6 text-sm">
-            {registrationData?.isGroupBooking ? 
-              `Your group payment for ${registrationData.ticketQuantity} tickets has been submitted for verification` :
-              'Your payment details have been submitted for verification'
-            }
+            Your payment details have been submitted for verification
           </p>
 
           {registrationData && (
@@ -26,24 +23,16 @@ function PaymentSuccess({ registrationData, onStartOver }) {
                 Submission Details
               </h3>
               <div className="space-y-2 text-sm">
-                {registrationData.isGroupBooking && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Booking Type</span>
-                    <span className="text-green-400 font-semibold">Group Booking</span>
-                  </div>
-                )}
-                {registrationData.ticketQuantity > 1 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Number of Tickets</span>
-                    <span className="text-white font-bold">{registrationData.ticketQuantity}</span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Booking Type</span>
+                  <span className="text-blue-400 font-semibold">Individual Booking</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Registration ID</span>
                   <span className="text-white font-mono text-xs">{registrationData.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Primary Name</span>
+                  <span className="text-gray-400">Registrant Name</span>
                   <span className="text-white">{registrationData.name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -72,14 +61,6 @@ function PaymentSuccess({ registrationData, onStartOver }) {
                         <span className="text-white font-semibold">You Paid:</span>
                         <span className="text-white font-bold">₹{registrationData.totalAmount ? (registrationData.totalAmount / 100) : (registrationData.amount / 100)}</span>
                       </div>
-                    </div>
-                  </div>
-                )}
-                {registrationData.isGroupBooking && registrationData.ticketQuantity >= 4 && (
-                  <div className="bg-green-900/30 border border-green-600/50 rounded p-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-green-400">🎉 Buy 3 Get 1 Free Applied!</span>
-                      <span className="text-green-400 font-bold">Saved: ₹{Math.floor(registrationData.ticketQuantity / 4) * 199}</span>
                     </div>
                   </div>
                 )}
@@ -117,10 +98,7 @@ function PaymentSuccess({ registrationData, onStartOver }) {
                 <p className="text-green-400 font-semibold mb-1">Next Steps:</p>
                 <ul className="text-green-200 space-y-1 text-xs">
                   <li>• Our admin team will verify your payment within 24 hours</li>
-                  <li>• {registrationData?.isGroupBooking ? 
-                    'Each member will receive their individual ticket via email once verified' :
-                    'You\'ll receive your event ticket via email once verified'
-                  }</li>
+                  <li>• You'll receive your event ticket via email once verified</li>
                   <li>• Keep your UTR number safe for reference</li>
                   <li>• Contact support if you don't hear back within 24 hours</li>
                 </ul>
