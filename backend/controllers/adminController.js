@@ -1,6 +1,6 @@
 import Registration from '../models/Registration.js'
 import { validationResult } from 'express-validator'
-import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendNewTimingUpdateEmail, sendConfirmationEmail, sendGroupConfirmationEmails, sendBringFriendPromotionEmail } from '../services/emailService.js'
+import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendNewTimingUpdateEmail, sendDay2TimingReminderEmail, sendConfirmationEmail, sendGroupConfirmationEmails, sendBringFriendPromotionEmail } from '../services/emailService.js'
 
 // Admin Dashboard Statistics
 export const getDashboardStats = async (req, res) => {
@@ -811,6 +811,93 @@ export const sendNewTimingUpdate = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error sending new timing update emails: ' + error.message
+    })
+  }
+}
+
+// Send Day 2 timing reminder emails
+export const sendDay2TimingReminder = async (req, res) => {
+  try {
+    const { targetGroup = 'all' } = req.body
+
+    // Build filter based on target group
+    const filter = {}
+    if (targetGroup === 'completed') filter.paymentStatus = 'completed'
+    if (targetGroup === 'pending') filter.paymentStatus = 'pending'
+    if (targetGroup === 'all') {
+      // Send to completed and paid_awaiting_verification only
+      filter.$or = [
+        { paymentStatus: 'completed' },
+        { paymentStatus: 'paid_awaiting_verification' }
+      ]
+    }
+
+    const registrations = await Registration.find(filter).select('name email')
+
+    if (registrations.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No recipients found for the selected target group',
+        data: {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          targetGroup
+        }
+      })
+    }
+
+    console.log(`📧 Sending Day 2 timing reminder emails to ${registrations.length} recipients...`)
+
+    let sent = 0
+    let failed = 0
+    const errors = []
+
+    // Send Day 2 timing reminder email to each recipient
+    for (const registration of registrations) {
+      try {
+        const result = await sendDay2TimingReminderEmail(registration)
+        if (result.success) {
+          sent++
+          console.log(`✅ Day 2 timing reminder email sent to ${registration.email}`)
+        } else {
+          failed++
+          errors.push({
+            email: registration.email,
+            error: result.error
+          })
+          console.error(`❌ Failed to send to ${registration.email}:`, result.error)
+        }
+
+        // Small delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        failed++
+        errors.push({
+          email: registration.email,
+          error: error.message
+        })
+        console.error(`❌ Error sending to ${registration.email}:`, error.message)
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Day 2 timing reminder emails sent! ${sent} emails sent${failed > 0 ? `, ${failed} failed` : ''}`,
+      data: {
+        sent,
+        failed,
+        total: registrations.length,
+        targetGroup,
+        subject: '📅 Day 2 Event Reminder - ACD 2026 Tomorrow',
+        errors: errors
+      }
+    })
+  } catch (error) {
+    console.error('Error sending Day 2 timing reminder emails:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error sending Day 2 timing reminder emails: ' + error.message
     })
   }
 }

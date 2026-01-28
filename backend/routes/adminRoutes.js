@@ -11,6 +11,7 @@ import {
   sendBulkNotification,
   sendTimingCorrection,
   sendNewTimingUpdate,
+  sendDay2TimingReminder,
   sendBringFriendPromotion,
   resendTickets,
   getFriendOfferSettings,
@@ -64,6 +65,9 @@ router.post('/notifications/timing-correction', sendTimingCorrection)
 
 // New timing update emails (Day 1: 10 AM - 6 PM)
 router.post('/notifications/new-timing-update', sendNewTimingUpdate)
+
+// Day 2 timing reminder emails
+router.post('/notifications/day2-timing-reminder', sendDay2TimingReminder)
 
 // Bring friend offer promotion emails
 router.post('/notifications/bring-friend-promotion', sendBringFriendPromotion)

@@ -1783,7 +1783,7 @@ export const sendNewTimingUpdateEmail = async (registrationData) => {
                         <span style="color: #9ca3af; font-size: 12px;">Day 2:</span>
                       </td>
                       <td align="right" style="padding: 8px 0; border-bottom: 1px solid #374151;">
-                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">January 29, 2026 | 8:00 AM - 5:00 PM</span>
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">January 29, 2026 | 9:00 AM - 5:00 PM</span>
                       </td>
                     </tr>
                     <tr>
@@ -1891,5 +1891,215 @@ This is an automated email. For support, contact mail@acesmitadt.com
   } catch (error) {
     console.error('❌ New timing update email failed:', error)
     return { success: false, error: 'Unable to send timing update email at this time.' }
+  }
+}
+
+// Function to send Day 2 timing reminder email
+export const sendDay2TimingReminderEmail = async (registrationData) => {
+  try {
+    const regData = registrationData.toObject ? registrationData.toObject() : registrationData
+    const { name, email } = regData
+    const fromAddress = 'ACD 2026 Notifications <' + (process.env.NOREPLY_EMAIL_USER || 'noreply@acesmitadt.com') + '>'
+
+    console.log('📧 Sending Day 2 timing reminder email...')
+
+    const mailOptions = {
+      from: fromAddress,
+      to: email,
+      subject: '📅 Day 2 Event Reminder - ACD 2026 Tomorrow',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Day 2 Event Reminder - ACD 2026</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+          <div style="width: 100%; background-color: #f3f4f6; padding: 20px 10px;">
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 0 auto; background-color: #1a1a1a; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); color: white; border: 1px solid #374151;">
+              
+              <!-- Header Section -->
+              <div style="padding: 20px; background-color: #1a1a1a;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td width="50" valign="middle">
+                      <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #0891b2, #0e7490); border-radius: 10px; padding: 2px;">
+                        <div style="background: #1a1a1a; width: 100%; height: 100%; border-radius: 8px; text-align: center; line-height: 36px;">
+                          <span style="font-size: 24px;">📅</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td valign="middle" style="padding-left: 12px;">
+                      <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: white; line-height: 1.2;">Day 2 Reminder</h1>
+                      <p style="margin: 0; color: #0891b2; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Event Tomorrow</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Main Content -->
+              <div style="padding: 30px 20px; background-color: #1a1a1a; border-top: 1px solid #374151;">
+                
+                <!-- Greeting -->
+                <p style="margin: 0 0 16px 0; color: #d1d5db; font-size: 15px;">Dear <strong style="color: white;">${name}</strong>,</p>
+                
+                <p style="margin: 0 0 20px 0; color: #9ca3af; font-size: 14px; line-height: 1.6;">
+                  This is a friendly reminder about <strong style="color: #0891b2;">Day 2 of ACD 2026</strong> happening tomorrow! We're excited to continue this amazing journey with you.
+                </p>
+
+                <!-- Day 2 Timing Highlight -->
+                <div style="background: linear-gradient(135deg, rgba(8, 145, 178, 0.15) 0%, rgba(14, 116, 144, 0.1) 100%); border: 2px solid #0891b2; border-radius: 12px; padding: 25px; text-align: center; margin: 25px 0;">
+                  <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 18px; font-weight: 700;">🗓️ DAY 2 TIMING</h3>
+                  <div style="background: rgba(8, 145, 178, 0.2); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <p style="margin: 0; color: #0891b2; font-size: 24px; font-weight: bold;">9:00 AM - 5:00 PM</p>
+                    <p style="margin: 5px 0 0 0; color: #d1d5db; font-size: 12px;">January 29, 2026 (Tomorrow)</p>
+                  </div>
+                </div>
+
+                <!-- Complete Event Schedule -->
+                <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 10px; padding: 20px; margin: 25px 0;">
+                  <h3 style="margin: 0 0 16px 0; color: #60a5fa; font-size: 15px; font-weight: 600;">📅 Complete Event Schedule</h3>
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #9ca3af; font-size: 12px;">Event:</span>
+                      </td>
+                      <td align="right" style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">ACD 2026 - ACES Community Day</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #9ca3af; font-size: 12px;">Day 1:</span>
+                      </td>
+                      <td align="right" style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">January 28, 2026 | 10:00 AM - 6:00 PM</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #9ca3af; font-size: 12px;">Day 2:</span>
+                      </td>
+                      <td align="right" style="padding: 8px 0; border-bottom: 1px solid #374151;">
+                        <span style="color: #0891b2; font-size: 14px; font-weight: 700;">January 29, 2026 | 9:00 AM - 5:00 PM</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0;">
+                        <span style="color: #9ca3af; font-size: 12px;">Venue:</span>
+                      </td>
+                      <td align="right" style="padding: 8px 0;">
+                        <span style="color: #d1d5db; font-size: 12px; font-weight: 500;">Urmila Tai Karad Auditorium, MIT ADT Pune</span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Day 2 Preparation Tips -->
+                <div style="background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; border-radius: 8px; padding: 16px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 8px 0; color: #22c55e; font-size: 14px; font-weight: 600;">✅ Day 2 Preparation</h4>
+                  <ul style="margin: 0; color: #d1d5db; font-size: 12px; line-height: 1.6; padding-left: 16px;">
+                    <li>Arrive at least 15 minutes before the start time (8:45 AM)</li>
+                    <li>Bring a valid ID and your registration confirmation</li>
+                    <li>Day 2 starts at 9:00 AM, so plan your commute accordingly</li>
+                    <li>Stay hydrated and come prepared for an amazing final day!</li>
+                    <li>Don't forget to network and make the most of the experience</li>
+                  </ul>
+                </div>
+
+                <!-- What to Expect -->
+                <div style="background: rgba(168, 85, 247, 0.1); border-left: 3px solid #a855f7; border-radius: 8px; padding: 16px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 8px 0; color: #a855f7; font-size: 14px; font-weight: 600;">🎯 What to Expect Tomorrow</h4>
+                  <p style="margin: 0; color: #d1d5db; font-size: 12px; line-height: 1.6;">
+                    Day 2 promises to be packed with exciting sessions, workshops, and networking opportunities. Make sure to get a good night's sleep and come energized for the grand finale of <strong style="color: #c084fc;">ACD 2026</strong>!
+                  </p>
+                </div>
+
+                <!-- Excitement Message -->
+                <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(234, 88, 12, 0.1) 100%); border: 2px solid #f97316; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0;">
+                  <h3 style="margin: 0 0 8px 0; color: #f97316; font-size: 16px; font-weight: 600;">🎉 Almost There!</h3>
+                  <p style="margin: 0; color: #d1d5db; font-size: 13px; line-height: 1.5;">
+                    We can't wait to see you tomorrow for the final day of this incredible journey. Thank you for being part of <strong style="color: #fb923c;">ACD 2026</strong>!
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- Footer -->
+              <div style="background: #151515; padding: 25px 20px; text-align: center; border-top: 1px solid #374151;">
+                <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 8px; padding: 16px; margin: 0 0 20px 0;">
+                  <p style="margin: 0 0 10px 0; color: #a5b4fc; font-size: 12px; font-weight: 600;">📞 Need Assistance?</p>
+                  <p style="margin: 5px 0; color: #d1d5db; font-size: 12px;">
+                    <strong>Aayush:</strong> <a href="tel:+919226750350" style="color: #818cf8; text-decoration: none;">9226750350</a>
+                  </p>
+                  <p style="margin: 5px 0; color: #d1d5db; font-size: 12px;">
+                    <strong>Ishan:</strong> <a href="tel:+919552448038" style="color: #818cf8; text-decoration: none;">9552448038</a>
+                  </p>
+                </div>
+                
+                <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">See you tomorrow at ACD 2026!</p>
+                <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 12px; font-weight: 600;">ACES Event Organization Team</p>
+                
+                <p style="margin: 0; color: #6b7280; font-size: 11px;">This is an automated email. For support, contact mail@acesmitadt.com</p>
+              </div>
+
+              <!-- Bottom Color Bar -->
+              <div style="height: 5px; background: linear-gradient(90deg, #0891b2, #0e7490); width: 100%;"></div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+ACD 2026 - Day 2 Event Reminder
+
+Dear ${name},
+
+This is a friendly reminder about Day 2 of ACD 2026 happening tomorrow! We're excited to continue this amazing journey with you.
+
+🗓️ DAY 2 TIMING: 9:00 AM - 5:00 PM
+Date: January 29, 2026 (Tomorrow)
+
+COMPLETE EVENT SCHEDULE:
+• Day 1: January 28, 2026 | 10:00 AM - 6:00 PM
+• Day 2: January 29, 2026 | 9:00 AM - 5:00 PM
+• Venue: Urmila Tai Karad Auditorium, MIT ADT Pune
+
+DAY 2 PREPARATION:
+• Arrive at least 15 minutes before the start time (8:45 AM)
+• Bring a valid ID and your registration confirmation
+• Day 2 starts at 9:00 AM, so plan your commute accordingly
+• Stay hydrated and come prepared for an amazing final day!
+• Don't forget to network and make the most of the experience
+
+WHAT TO EXPECT TOMORROW:
+Day 2 promises to be packed with exciting sessions, workshops, and networking opportunities. Make sure to get a good night's sleep and come energized for the grand finale of ACD 2026!
+
+🎉 ALMOST THERE!
+We can't wait to see you tomorrow for the final day of this incredible journey. Thank you for being part of ACD 2026!
+
+NEED ASSISTANCE?
+Aayush: 9226750350
+Ishan: 9552448038
+Email: mail@acesmitadt.com
+
+See you tomorrow at ACD 2026!
+ACES Event Organization Team
+
+This is an automated email. For support, contact mail@acesmitadt.com
+      `
+    }
+
+    const info = await sendNoreplyEmailQueued(mailOptions)
+    console.log('✅ Day 2 timing reminder email sent:', info.messageId)
+
+    return {
+      success: true,
+      messageId: info.messageId
+    }
+  } catch (error) {
+    console.error('❌ Day 2 timing reminder email failed:', error)
+    return { success: false, error: 'Unable to send Day 2 timing reminder email at this time.' }
   }
 }

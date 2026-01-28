@@ -177,6 +177,44 @@ const AdminNotifications = () => {
     }
   }
 
+  const handleSendDay2TimingReminder = async (targetGroup = 'all') => {
+    if (!confirm(`Are you sure you want to send Day 2 timing reminder emails to ${targetGroup === 'all' ? 'ALL registered users' : targetGroup + ' users'}? This will remind them about Day 2 timing (9:00 AM - 5:00 PM).`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(buildApiUrl('/api/admin/notifications/day2-timing-reminder'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ targetGroup })
+      })
+
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken')
+        navigate('/admin/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`✅ ${data.message} - Day 2 timing reminder emails sent successfully!`)
+        if (data.data.failed > 0) {
+          setError(`Note: ${data.data.failed} emails failed to send. Check server logs for details.`)
+        }
+      } else {
+        setError(data.message)
+      }
+    } catch (err) {
+      setError('Error sending Day 2 timing reminder emails')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleResendTickets = async (targetGroup = 'completed') => {
     if (!confirm(`Are you sure you want to resend tickets to ${targetGroup === 'completed' ? 'ALL users with completed payments' : targetGroup + ' users'}? This will send registration confirmation and ticket emails.`)) {
       return
@@ -436,6 +474,81 @@ const AdminNotifications = () => {
 
               <p className="text-xs text-green-700 mt-3 italic">
                 ✨ New timing: Day 1 now runs from 10 AM to 6 PM for better experience
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Day 2 Timing Reminder Section */}
+        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-500 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-cyan-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-bold text-cyan-900 mb-2">
+                📅 Day 2 Event Timing Reminder
+              </h3>
+              <p className="text-sm text-cyan-800 mb-4">
+                Send reminder emails about <strong>Day 2 timing (January 29, 2026)</strong>.
+                This will remind users about the <strong>9:00 AM - 5:00 PM</strong> schedule for the second day.
+              </p>
+
+              <div className="bg-white bg-opacity-60 rounded-md p-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Email will include:</h4>
+                <ul className="text-xs text-gray-700 space-y-1">
+                  <li>✓ Clear Day 2 timing reminder (9:00 AM - 5:00 PM)</li>
+                  <li>✓ Complete event schedule for both days</li>
+                  <li>✓ Important preparation notes for Day 2</li>
+                  <li>✓ Contact information and event details</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleSendDay2TimingReminder('all')}
+                  disabled={loading}
+                  className="bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-400 text-white px-6 py-2.5 rounded-md font-medium transition-colors shadow-md flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Send to All Users
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleSendDay2TimingReminder('completed')}
+                  disabled={loading}
+                  className="bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Completed Only
+                </button>
+
+                <button
+                  onClick={() => handleSendDay2TimingReminder('pending')}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors shadow-md text-sm"
+                >
+                  Pending Only
+                </button>
+              </div>
+
+              <p className="text-xs text-cyan-700 mt-3 italic">
+                🗓️ Day 2: Perfect timing for the final day of ACD 2026
               </p>
             </div>
           </div>
