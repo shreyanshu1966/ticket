@@ -53,8 +53,27 @@ router.post('/api/check-verification', (req, res) => {
 // Ticket routes
 router.use('/api/tickets', ticketRoutes)
 
-// Admin routes
+// Admin routes (excluding payment verification)
 router.use('/api/admin', adminRoutes)
+
+// Block admin payment verification endpoints while keeping other admin actions
+router.use('/api/admin/verify-payment*', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Payment verification is currently closed',
+    error: 'PAYMENT_VERIFICATION_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
+
+router.use('/api/admin/payment*', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Payment operations are currently closed',
+    error: 'PAYMENT_OPERATIONS_CLOSED',
+    timestamp: new Date().toISOString()
+  })
+})
 
 // Friend referral routes - COMMENTED OUT - REGISTRATIONS CLOSED
 // router.use('/api/friend', friendRoutes)
