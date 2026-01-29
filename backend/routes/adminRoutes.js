@@ -16,7 +16,10 @@ import {
   resendTickets,
   getFriendOfferSettings,
   toggleFriendOffer,
-  getFriendRegistrations
+  getFriendRegistrations,
+  getEventEntries,
+  getEntriesByDay,
+  exportEntries
 } from '../controllers/adminController.js'
 
 const router = express.Router()
@@ -82,5 +85,10 @@ router.put('/friend-offer/toggle', [
   body('adminName').optional().isString()
 ], toggleFriendOffer)
 router.get('/friend-registrations', getFriendRegistrations)
+
+// Event entries management
+router.get('/entries', getEventEntries)
+router.get('/entries/day/:day', getEntriesByDay)
+router.get('/export/entries', exportEntries)
 
 export default router

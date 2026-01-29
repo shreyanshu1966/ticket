@@ -7,6 +7,7 @@ import AdminDashboard from './AdminDashboard'
 import AdminRegistrations from './AdminRegistrations'
 import AdminExport from './AdminExport'
 import AdminNotifications from './AdminNotifications'
+import AdminEntries from './AdminEntries'
 import BringFriendForm from './BringFriendForm'
 import ProtectedRoute from './ProtectedRoute'
 import TicketPreview from './TicketPreview'
@@ -87,6 +88,11 @@ function App() {
         <Route path="/bring-friend" element={<BringFriendForm />} />
         <Route path="/scanner" element={<QRScanner />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/admin/dashboard" element={
           <ProtectedRoute>
             <AdminDashboard />
@@ -105,6 +111,11 @@ function App() {
         <Route path="/admin/notifications" element={
           <ProtectedRoute>
             <AdminNotifications />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/entries" element={
+          <ProtectedRoute>
+            <AdminEntries />
           </ProtectedRoute>
         } />
         <Route path="/ticket-preview" element={<TicketPreview />} />

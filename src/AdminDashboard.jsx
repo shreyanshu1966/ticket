@@ -504,12 +504,18 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => navigate('/admin/registrations')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors"
           >
             Manage Registrations
+          </button>
+          <button
+            onClick={() => navigate('/admin/entries')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors"
+          >
+            📊 Event Entries
           </button>
           <button
             onClick={() => navigate('/admin/export')}

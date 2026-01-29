@@ -1,4 +1,5 @@
 import Registration from '../models/Registration.js'
+import EventEntry from '../models/EventEntry.js'
 import { validationResult } from 'express-validator'
 import { sendBulkNotification as sendBulkEmail, sendPendingPaymentEmail, sendTimingCorrectionEmail, sendNewTimingUpdateEmail, sendDay2TimingReminderEmail, sendConfirmationEmail, sendGroupConfirmationEmails, sendBringFriendPromotionEmail } from '../services/emailService.js'
 
@@ -1236,6 +1237,197 @@ export const getFriendRegistrations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching friend registrations'
+    })
+  }
+}
+
+// Get all event entries with pagination and filtering
+export const getEventEntries = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 50
+    const skip = (page - 1) * limit
+    const day = req.query.day
+    const search = req.query.search
+
+    // Build query filters
+    let query = {}
+    if (day && [1, 2].includes(parseInt(day))) {
+      query.day = parseInt(day)
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i')
+      query.$or = [
+        { attendeeName: searchRegex },
+        { attendeeEmail: searchRegex },
+        { ticketNumber: searchRegex },
+        { attendeeCollege: searchRegex }
+      ]
+    }
+
+    // Get entries with registration data
+    const entries = await EventEntry.find(query)
+      .populate('registrationId', 'name email paymentStatus isGroupBooking')
+      .sort({ entryDate: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    const totalCount = await EventEntry.countDocuments(query)
+
+    // Get daily stats for overview
+    const dailyStats = await EventEntry.getDailyStats()
+
+    res.json({
+      success: true,
+      data: {
+        entries,
+        dailyStats,
+        pagination: {
+          current: page,
+          total: Math.ceil(totalCount / limit),
+          count: entries.length,
+          totalItems: totalCount
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching event entries:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching event entries'
+    })
+  }
+}
+
+// Get entries for a specific day
+export const getEntriesByDay = async (req, res) => {
+  try {
+    const day = parseInt(req.params.day)
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 50
+    const skip = (page - 1) * limit
+    const search = req.query.search
+
+    if (![1, 2].includes(day)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid day. Day must be 1 or 2'
+      })
+    }
+
+    // Build search query
+    let query = { day }
+    if (search) {
+      const searchRegex = new RegExp(search, 'i')
+      query.$or = [
+        { attendeeName: searchRegex },
+        { attendeeEmail: searchRegex },
+        { ticketNumber: searchRegex },
+        { attendeeCollege: searchRegex }
+      ]
+    }
+
+    // Get entries for the day
+    const entries = await EventEntry.find(query)
+      .populate('registrationId', 'name email paymentStatus isGroupBooking')
+      .sort({ entryDate: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    const totalCount = await EventEntry.countDocuments(query)
+
+    // Get hourly breakdown for this day
+    const hourlyStats = await EventEntry.aggregate([
+      { $match: { day } },
+      {
+        $group: {
+          _id: { $hour: '$entryDate' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ])
+
+    res.json({
+      success: true,
+      data: {
+        day,
+        entries,
+        hourlyStats,
+        pagination: {
+          current: page,
+          total: Math.ceil(totalCount / limit),
+          count: entries.length,
+          totalItems: totalCount
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching day entries:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching day entries'
+    })
+  }
+}
+
+// Export entries data
+export const exportEntries = async (req, res) => {
+  try {
+    const day = req.query.day
+    let query = {}
+    
+    if (day && [1, 2].includes(parseInt(day))) {
+      query.day = parseInt(day)
+    }
+
+    const entries = await EventEntry.find(query)
+      .populate('registrationId', 'name email college year paymentStatus isGroupBooking')
+      .sort({ entryDate: -1 })
+
+    // Format data for export
+    const exportData = entries.map(entry => ({
+      'Ticket Number': entry.ticketNumber,
+      'Attendee Name': entry.attendeeName,
+      'Attendee Email': entry.attendeeEmail,
+      'College': entry.attendeeCollege || entry.registrationId?.college || 'N/A',
+      'Year': entry.attendeeYear || entry.registrationId?.year || 'N/A',
+      'Day': entry.day,
+      'Entry Date': entry.entryDate.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
+      'Is Group Member': entry.isGroupMember ? 'Yes' : 'No',
+      'Booking Email': entry.bookingEmail || entry.attendeeEmail,
+      'Registration Status': entry.registrationId?.paymentStatus || 'N/A'
+    }))
+
+    const dayLabel = day ? `_day${day}` : '_all'
+    const filename = `event_entries${dayLabel}_${new Date().toISOString().split('T')[0]}`
+
+    res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`)
+    
+    res.json({
+      success: true,
+      data: exportData,
+      summary: {
+        totalEntries: exportData.length,
+        exportDate: new Date().toISOString(),
+        dayFilter: day || 'all'
+      }
+    })
+  } catch (error) {
+    console.error('Error exporting entries:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting entries data'
     })
   }
 }
